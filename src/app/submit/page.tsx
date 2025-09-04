@@ -192,6 +192,9 @@ export default function SubmitPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
+  // Temporary user placeholder until authentication is implemented
+  const user = null;
+
     e.preventDefault()
     
     if (!user) {
