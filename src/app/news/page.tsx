@@ -166,6 +166,9 @@ export default function NewsPage() {
   // 移除认证相关逻辑
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+    // 临时用户占位，未连接认证
+  const user = null
+
   const [filteredNews, setFilteredNews] = useState(mockNews)
 
   useEffect(() => {
