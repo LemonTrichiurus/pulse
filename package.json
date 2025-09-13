@@ -6,10 +6,18 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "chat:autosave": "node ./scripts/chatAutosave.js",
+    "deploy": "chmod +x deploy.sh && ./deploy.sh",
+    "deploy:ip": "chmod +x deploy-ip.sh && ./deploy-ip.sh",
+    "deploy:subpath": "powershell -ExecutionPolicy Bypass -File deploy-subpath.ps1",
+    "deploy:check": "chmod +x check-deployment.sh && ./check-deployment.sh",
+    "server:setup": "scp server-setup.sh root@47.101.144.238:/tmp/ && ssh root@47.101.144.238 'chmod +x /tmp/server-setup.sh && /tmp/server-setup.sh'",
+    "build:production": "NODE_ENV=production npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.6",
@@ -20,6 +28,8 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.55.0",
+    "@upstash/ratelimit": "^2.0.6",
+    "@upstash/redis": "^1.35.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

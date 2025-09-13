@@ -284,19 +284,17 @@ export default function NewsPage() {
       </div>
 
       {/* 投稿提示 */}
-      {user && (
-        <div className="mt-12 p-6 bg-blue-50 dark:bg-blue-950 rounded-lg">
-          <h3 className="font-semibold mb-2">想要分享你的故事？</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            欢迎向新闻中心投稿，分享校园生活、学习心得或关注的话题。
-          </p>
-          <Link href="/submit">
-            <Button size="sm">
-              立即投稿
-            </Button>
-          </Link>
-        </div>
-      )}
+      <div className="mt-12 p-6 bg-blue-50 dark:bg-blue-950 rounded-lg">
+        <h3 className="font-semibold mb-2">想要分享你的故事？</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          欢迎向新闻中心投稿，分享校园生活、学习心得或关注的话题。
+        </p>
+        <Link href="/submit">
+          <Button size="sm">
+            立即投稿
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

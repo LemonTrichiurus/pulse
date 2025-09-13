@@ -194,10 +194,7 @@ export default function SubmitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!user) {
-      toast.error('请先登录')
-      return
-    }
+    // 暂时跳过用户验证
 
     if (!form.agreement) {
       toast.error('请同意投稿须知')
@@ -256,20 +253,7 @@ export default function SubmitPage() {
   const currentTypeInfo = submissionTypes[selectedType as keyof typeof submissionTypes]
   const TypeIcon = currentTypeInfo.icon
 
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-md mx-auto text-center p-8">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-xl font-semibold mb-2">需要登录</h2>
-          <p className="text-muted-foreground mb-4">
-            请先登录后再进行投稿
-          </p>
-          <Button>前往登录</Button>
-        </Card>
-      </div>
-    )
-  }
+  // 暂时跳过用户验证
 
   return (
     <div className="container mx-auto px-4 py-8">

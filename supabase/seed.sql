@@ -1,837 +1,232 @@
--- 插入测试用户
-INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_user_meta_data)
-VALUES 
-    ('11111111-1111-1111-1111-111111111111', 'admin@school.edu', crypt('admin123', gen_salt('bf')), NOW(), NOW(), NOW(), '{"display_name": "管理员"}'),
-    ('22222222-2222-2222-2222-222222222222', 'moderator@school.edu', crypt('mod123', gen_salt('bf')), NOW(), NOW(), NOW(), '{"display_name": "版主"}'),
-    ('33333333-3333-3333-3333-333333333333', 'student1@school.edu', crypt('student123', gen_salt('bf')), NOW(), NOW(), NOW(), '{"display_name": "张同学"}'),
-    ('44444444-4444-4444-4444-444444444444', 'student2@school.edu', crypt('student123', gen_salt('bf')), NOW(), NOW(), NOW(), '{"display_name": "李同学"}');
-
--- 插入用户档案
-INSERT INTO profiles (id, display_name, role) VALUES
-    ('11111111-1111-1111-1111-111111111111', '管理员', 'admin'),
-    ('22222222-2222-2222-2222-222222222222', '版主', 'moderator'),
-    ('33333333-3333-3333-3333-333333333333', '张同学', 'member'),
-    ('44444444-4444-4444-4444-444444444444', '李同学', 'member');
-
--- 插入新闻数据
-INSERT INTO news (title, summary, body, author_id, category, published_at, tags, status, views) VALUES
-    (
-        '学校举办第十届科技节活动',
-        '本届科技节以"创新引领未来"为主题，展示了学生们的科技创新成果',
-        '# 学校举办第十届科技节活动
-
-本届科技节以"创新引领未来"为主题，于上周在学校体育馆成功举办。活动吸引了全校师生的积极参与，展示了近百项学生科技创新作品。
-
-## 活动亮点
-
-### 机器人竞赛
-- 参赛队伍：32支
-- 比赛项目：自动避障、物品搬运、创意表演
-- 获奖作品展现了学生们的编程能力和创新思维
-
-### 科学实验展示
-学生们展示了各种有趣的科学实验，包括：
-- 化学反应演示
-- 物理原理验证
-- 生物标本制作
-
-### 创新发明展览
-展出了学生们的各种小发明，涵盖生活用品改良、环保装置等领域。
-
-本次科技节不仅展示了学生们的科技素养，也激发了更多同学对科学技术的兴趣。',
-        '22222222-2222-2222-2222-222222222222',
-        '校园',
-        NOW() - INTERVAL '2 days',
-        ARRAY['科技节', '创新', '机器人', '科学实验'],
-        'published',
-        156
-    ),
-    (
-        '我校学生在全国数学竞赛中获得佳绩',
-        '高三年级王同学荣获全国数学竞赛一等奖，为学校争得荣誉',
-        '# 我校学生在全国数学竞赛中获得佳绩
-
-在刚刚结束的全国高中数学联赛中，我校高三年级王同学凭借扎实的数学功底和出色的解题能力，荣获全国一等奖，为学校争得了荣誉。
-
-## 获奖情况
-
-- **一等奖**：王同学（高三1班）
-- **二等奖**：李同学（高三2班）、张同学（高二3班）
-- **三等奖**：陈同学（高二1班）、刘同学（高一4班）
-
-## 备赛过程
-
-据数学组老师介绍，参赛学生们在过去一年中：
-- 每周参加数学竞赛培训
-- 完成大量练习题目
-- 参加模拟考试
-
-## 学校支持
-
-学校为数学竞赛提供了全方位支持：
-- 配备专业教练团队
-- 提供专门的训练场地
-- 购买最新的参考资料
-
-这次获奖不仅是对学生个人努力的肯定，也体现了我校数学教育的高水平。',
-        '22222222-2222-2222-2222-222222222222',
-        '校园',
-        NOW() - INTERVAL '1 day',
-        ARRAY['数学竞赛', '获奖', '学科竞赛'],
-        'published',
-        89
-    ),
-    (
-        '联合国气候变化大会达成重要共识',
-        '各国代表就减排目标和气候资金等关键议题达成一致',
-        '# 联合国气候变化大会达成重要共识
-
-在迪拜举行的联合国气候变化大会（COP28）经过两周的激烈谈判，各国代表终于就多项关键议题达成重要共识。
-
-## 主要成果
-
-### 减排目标
-- 全球温室气体排放量需在2030年前减少43%
-- 发达国家承诺提供更多气候资金支持
-- 制定了详细的监督和评估机制
-
-### 可再生能源
-会议确定了可再生能源发展目标：
-- 2030年前全球可再生能源装机容量增加两倍
-- 能源效率提升速度翻倍
-- 逐步淘汰化石燃料
-
-### 气候适应
-针对气候变化适应问题：
-- 建立全球适应目标框架
-- 增加适应资金投入
-- 加强脆弱国家能力建设
-
-## 中国贡献
-
-中国在本次大会中发挥了重要作用：
-- 宣布了新的减排承诺
-- 分享了绿色发展经验
-- 承诺增加对发展中国家的支持
-
-这次大会的成果为全球应对气候变化提供了新的动力和方向。',
-        '33333333-3333-3333-3333-333333333333',
-        '全球',
-        NOW() - INTERVAL '3 hours',
-        ARRAY['气候变化', '联合国', '环保', '国际合作'],
-        'published',
-        234
-    ),
-    (
-        '人工智能技术在教育领域的最新应用',
-        'AI技术正在革命性地改变传统教育模式，个性化学习成为新趋势',
-        '# 人工智能技术在教育领域的最新应用
-
-随着人工智能技术的快速发展，教育行业正在经历一场深刻的变革。AI技术的应用不仅提高了教学效率，也为学生提供了更加个性化的学习体验。
-
-## 主要应用领域
-
-### 个性化学习
-AI系统能够：
-- 分析学生的学习习惯和能力
-- 制定个性化的学习计划
-- 实时调整教学内容和难度
-- 提供针对性的练习题目
-
-### 智能辅导
-AI辅导系统的特点：
-- 24小时在线答疑
-- 多语言支持
-- 即时反馈和纠错
-- 学习进度跟踪
-
-### 自动评估
-- 作业自动批改
-- 学习成果评估
-- 知识掌握程度分析
-- 学习建议生成
-
-## 技术优势
-
-### 数据驱动
-- 收集和分析大量学习数据
-- 发现学习规律和问题
-- 优化教学策略
-
-### 效率提升
-- 减少教师重复性工作
-- 提高教学资源利用率
-- 缩短学习周期
-
-## 挑战与思考
-
-尽管AI在教育中的应用前景广阔，但也面临一些挑战：
-- 数据隐私保护
-- 技术公平性
-- 人机关系平衡
-- 教师角色转变
-
-未来，AI技术将继续推动教育创新，但如何在技术进步和人文关怀之间找到平衡，仍需要我们深入思考。',
-        '44444444-4444-4444-4444-444444444444',
-        '全球',
-        NOW() - INTERVAL '6 hours',
-        ARRAY['人工智能', '教育科技', '个性化学习', '未来教育'],
-        'published',
-        178
-    );
-
--- 插入话题数据
-INSERT INTO topics (title, category, starter_id, body, tags, upvotes, pinned) VALUES
-    (
-        '关于期末考试复习方法的讨论',
-        '学习',
-        '33333333-3333-3333-3333-333333333333',
-        '期末考试马上就要到了，大家都是怎么复习的呢？我想听听大家的经验分享。
-
-我自己的方法是：
-1. 制定详细的复习计划
-2. 整理各科知识点
-3. 做历年真题
-4. 组建学习小组互相讨论
-
-大家还有什么好的方法吗？',
-        ARRAY['期末考试', '复习方法', '学习技巧'],
-        15,
-        true
-    ),
-    (
-        '学校社团招新活动建议',
-        '社团',
-        '44444444-4444-4444-4444-444444444444',
-        '下学期的社团招新活动快要开始了，作为社团负责人，我想征集一些活动建议。
-
-目前计划的活动：
-- 社团展示摊位
-- 才艺表演
-- 互动游戏
-- 社团介绍讲座
-
-大家觉得还可以增加什么有趣的环节吗？',
-        ARRAY['社团招新', '活动策划', '学生组织'],
-        8,
-        false
-    ),
-    (
-        '校园环保倡议：减少一次性用品使用',
-        '建议',
-        '22222222-2222-2222-2222-222222222222',
-        '最近注意到校园里一次性用品使用量很大，特别是食堂的一次性餐具和塑料袋。
-
-建议学校可以：
-1. 推广可重复使用的餐具
-2. 设置垃圾分类回收点
-3. 开展环保教育活动
-4. 鼓励学生自带水杯和餐具
-
-大家对校园环保还有什么好建议吗？',
-        ARRAY['环保', '校园建设', '可持续发展'],
-        23,
-        false
-    );
-
--- 插入话题评论
-INSERT INTO topic_comments (topic_id, author_id, body, upvotes) VALUES
-    (
-        (SELECT id FROM topics WHERE title = '关于期末考试复习方法的讨论'),
-        '44444444-4444-4444-4444-444444444444',
-        '我觉得制作思维导图很有用！可以把各科的知识点用图表的形式整理出来，这样复习的时候一目了然。',
-        5
-    ),
-    (
-        (SELECT id FROM topics WHERE title = '关于期末考试复习方法的讨论'),
-        '22222222-2222-2222-2222-222222222222',
-        '建议大家合理安排作息时间，不要熬夜复习。保证充足的睡眠对记忆和理解都很重要。',
-        8
-    ),
-    (
-        (SELECT id FROM topics WHERE title = '校园环保倡议：减少一次性用品使用'),
-        '33333333-3333-3333-3333-333333333333',
-        '支持这个倡议！我们班已经开始实行自带餐具的制度了，效果不错。',
-        12
-    );
-
--- 插入 Sharespeare 分享
-INSERT INTO sharespeare (title, advisor_name, type, summary, body, tags, author_id) VALUES
-    (
-        '高效记忆法：如何在短时间内掌握大量知识',
-        '王老师',
-        '学习方法',
-        '分享一些实用的记忆技巧，帮助同学们提高学习效率',
-        '# 高效记忆法：如何在短时间内掌握大量知识
-
-作为一名即将毕业的学长，我想分享一些在学习过程中总结的记忆方法，希望能帮助到学弟学妹们。
-
-## 记忆技巧
-
-### 1. 联想记忆法
-将要记忆的内容与已知的事物建立联系：
-- 利用谐音
-- 创造故事情节
-- 建立视觉图像
-
-### 2. 分块记忆法
-将大量信息分成小块：
-- 每次记忆5-7个项目
-- 逐步增加难度
-- 定期复习巩固
-
-### 3. 重复记忆法
-科学的重复时间间隔：
-- 第1次：学习后立即复习
-- 第2次：1天后复习
-- 第3次：3天后复习
-- 第4次：1周后复习
-- 第5次：1个月后复习
-
-## 实践建议
-
-### 制定学习计划
-- 明确学习目标
-- 合理分配时间
-- 设置检查节点
-
-### 创造良好环境
-- 选择安静的学习场所
-- 保持桌面整洁
-- 避免干扰因素
-
-### 保持身心健康
-- 规律作息
-- 适当运动
-- 均衡饮食
-
-## 学科应用
-
-### 语言学习
-- 词汇记忆：词根词缀法
-- 语法记忆：例句记忆法
-- 口语练习：情景模拟法
-
-### 理科学习
-- 公式记忆：推导过程记忆
-- 概念理解：实例分析法
-- 解题技巧：类型归纳法
-
-### 文科学习
-- 历史记忆：时间线梳理
-- 地理记忆：地图标注法
-- 政治记忆：框架结构法
-
-希望这些方法能对大家有所帮助！记住，最重要的是找到适合自己的学习方法。',
-        ARRAY['学习方法', '记忆技巧', '学习效率'],
-        '33333333-3333-3333-3333-333333333333'
-    ),
-    (
-        '模拟联合国社团：培养国际视野的平台',
-        '李老师',
-        '社团经历',
-        '在模联社团的三年经历，让我收获了知识、友谊和成长',
-        '# 模拟联合国社团：培养国际视野的平台
-
-加入模拟联合国社团是我高中生活中最重要的决定之一。在这里，我不仅学到了国际关系知识，更重要的是培养了批判性思维和公共演讲能力。
-
-## 社团介绍
-
-### 什么是模拟联合国
-模拟联合国（Model United Nations，简称MUN）是模拟联合国及相关的国际机构，依据其运作方式和议事原则，围绕国际上的热点问题召开的会议。
-
-### 活动形式
-- **会议模拟**：扮演各国外交官
-- **议题讨论**：就国际热点问题进行辩论
-- **决议草案**：起草和投票表决决议
-- **外交谈判**：进行双边和多边磋商
-
-## 收获与成长
-
-### 知识层面
-- **国际关系理论**：了解国际政治的基本概念
-- **时事政治**：关注全球热点问题
-- **历史文化**：深入了解各国国情
-- **英语能力**：提高英语表达和写作水平
-
-### 能力提升
-- **公共演讲**：克服紧张，自信表达
-- **批判思维**：多角度分析问题
-- **团队合作**：与队友协作完成任务
-- **时间管理**：在有限时间内完成复杂任务
-
-### 个人成长
-- **国际视野**：站在全球角度思考问题
-- **文化包容**：理解和尊重不同文化
-- **责任意识**：关注人类共同命题
-- **领导能力**：在团队中发挥引领作用
-
-## 参与建议
-
-### 如何准备
-1. **基础知识学习**
-   - 阅读国际关系入门书籍
-   - 关注国际新闻
-   - 了解联合国机构设置
-
-2. **技能训练**
-   - 练习公共演讲
-   - 提高英语水平
-   - 学习议事规则
-
-3. **实践参与**
-   - 参加校内模拟会议
-   - 观摩高年级同学的表现
-   - 积极参与讨论
-
-### 注意事项
-- 保持开放心态
-- 尊重不同观点
-- 注重团队合作
-- 持续学习改进
-
-## 未来发展
-
-模联经历对我的大学申请和未来发展都产生了积极影响：
-- **大学申请**：丰富的课外活动经历
-- **专业选择**：明确了国际关系方向的兴趣
-- **职业规划**：为外交、国际组织工作奠定基础
-
-如果你对国际事务感兴趣，想要提升自己的综合能力，我强烈推荐加入模拟联合国社团！',
-        ARRAY['模拟联合国', '社团活动', '国际视野', '能力提升'],
-        '44444444-4444-4444-4444-444444444444'
-    ),
-    (
-        'AMC数学竞赛备考心得：从零基础到获奖',
-        '张老师',
-        '竞赛经验',
-        '分享AMC数学竞赛的备考经验和解题技巧',
-        '# AMC数学竞赛备考心得：从零基础到获奖
-
-作为一名刚刚在AMC12中获得优异成绩的学生，我想分享一下自己的备考经验，希望能帮助到有志于参加数学竞赛的同学们。
-
-## 竞赛介绍
-
-### AMC简介
-AMC（American Mathematics Competitions）是美国数学竞赛，分为AMC8、AMC10和AMC12三个级别，是通往AIME、USAMO等高级数学竞赛的重要途径。
-
-### 考试特点
-- **题目数量**：25道选择题
-- **考试时间**：75分钟
-- **评分方式**：答对得6分，不答得1.5分，答错得0分
-- **知识范围**：涵盖代数、几何、数论、组合等
-
-## 备考历程
-
-### 初期准备（6个月前）
-1. **基础知识梳理**
-   - 复习高中数学课程
-   - 补充竞赛基础知识
-   - 建立知识框架
-
-2. **资料选择**
-   - 《AMC历年真题集》
-   - 《数学竞赛教程》
-   - 在线学习平台
-
-### 中期训练（3-6个月）
-1. **专题训练**
-   - 代数：不等式、函数、数列
-   - 几何：平面几何、解析几何、立体几何
-   - 数论：整数性质、同余、素数
-   - 组合：排列组合、概率、图论
-
-2. **解题技巧**
-   - 特殊值法
-   - 反证法
-   - 构造法
-   - 分类讨论
-
-### 冲刺阶段（最后3个月）
-1. **真题训练**
-   - 严格按照考试时间完成
-   - 分析错题原因
-   - 总结解题规律
-
-2. **模拟考试**
-   - 每周进行2-3次模拟
-   - 适应考试节奏
-   - 调整答题策略
-
-## 学习方法
-
-### 时间安排
-- **平时**：每天1-2小时
-- **周末**：3-4小时集中训练
-- **假期**：强化训练营
-
-### 学习策略
-1. **循序渐进**
-   - 从简单题目开始
-   - 逐步增加难度
-   - 不急于求成
-
-2. **举一反三**
-   - 理解题目本质
-   - 掌握通用方法
-   - 建立题型库
-
-3. **错题整理**
-   - 建立错题本
-   - 定期复习
-   - 避免重复错误
-
-## 解题技巧
-
-### 选择题策略
-1. **排除法**：排除明显错误的选项
-2. **特殊值法**：用特殊值验证答案
-3. **估算法**：快速估算答案范围
-4. **逆向思维**：从答案出发验证
-
-### 时间管理
-- **前15题**：每题平均2分钟
-- **中间5题**：每题平均3分钟
-- **最后5题**：每题平均4分钟
-- **检查时间**：预留10分钟
-
-## 心态调整
-
-### 考前准备
-- 保证充足睡眠
-- 适度放松心情
-- 准备考试用品
-- 熟悉考场环境
-
-### 考试心态
-- 保持冷静
-- 合理分配时间
-- 不纠结难题
-- 相信自己的判断
-
-## 经验总结
-
-### 成功要素
-1. **坚持不懈**：数学竞赛需要长期积累
-2. **方法得当**：找到适合自己的学习方法
-3. **心态平和**：保持对数学的兴趣和热爱
-4. **老师指导**：寻求专业老师的帮助
-
-### 常见误区
-- 只做难题，忽视基础
-- 题海战术，不注重理解
-- 急于求成，缺乏耐心
-- 孤军奋战，不善交流
-
-## 后续发展
-
-参加AMC竞赛不仅是为了获奖，更重要的是：
-- 培养数学思维
-- 提升解题能力
-- 为后续学习打基础
-- 增强自信心
-
-希望我的经验能对大家有所帮助。记住，数学竞赛的路虽然不易，但只要坚持下去，一定会有收获！',
-        ARRAY['AMC', '数学竞赛', '备考经验', '解题技巧'],
-        '33333333-3333-3333-3333-333333333333'
-    ),
-    (
-        '美国大学申请全攻略：从规划到录取',
-        '陈老师',
-        '大学申请心得',
-        '详细分享美国大学申请的完整流程和注意事项',
-        '# 美国大学申请全攻略：从规划到录取
-
-作为一名成功申请到美国顶尖大学的学生，我想分享一下自己的申请经验，希望能为有意向申请美国大学的同学提供一些参考。
-
-## 申请时间线
-
-### 高一阶段：基础建设
-- **学术成绩**：保持GPA在3.8以上
-- **语言准备**：开始托福学习
-- **课外活动**：探索兴趣，参加社团
-- **标化考试**：了解SAT/ACT考试
-
-### 高二阶段：能力提升
-- **标化考试**：完成托福考试（目标100+）
-- **学术竞赛**：参加相关学科竞赛
-- **领导经历**：在社团中担任重要职务
-- **暑期活动**：参加夏校或实习项目
-
-### 高三阶段：申请冲刺
-- **标化考试**：完成SAT/ACT考试
-- **文书写作**：准备个人陈述和补充文书
-- **推荐信**：联系推荐人
-- **申请提交**：完成所有申请材料
-
-## 申请要素
-
-### 学术成绩
-1. **GPA**：最重要的指标之一
-   - 目标：3.8+（满分4.0）
-   - 保持稳定的上升趋势
-   - 重视核心学科成绩
-
-2. **课程难度**：选择有挑战性的课程
-   - AP课程：建议选择5-8门
-   - IB课程：完整的IB文凭
-   - 荣誉课程：展示学术能力
-
-### 标化考试
-1. **托福（TOEFL）**
-   - 目标分数：100+
-   - 各项分数均衡
-   - 口语和写作尤为重要
-
-2. **SAT/ACT**
-   - SAT目标：1450+
-   - ACT目标：32+
-   - 可以多次考试取最高分
-
-3. **SAT Subject Tests**（部分学校要求）
-   - 选择自己擅长的科目
-   - 目标分数：750+
-
-### 课外活动
-1. **深度参与**：质量比数量重要
-   - 选择2-3个核心活动
-   - 展示领导力和影响力
-   - 体现个人特色
-
-2. **活动类型**
-   - 学术竞赛：数学、科学、辩论等
-   - 社区服务：志愿活动、公益项目
-   - 艺术体育：音乐、美术、体育特长
-   - 创业创新：商业项目、科研活动
-
-### 文书写作
-1. **个人陈述（Personal Statement）**
-   - 展示个人特色和成长经历
-   - 体现价值观和目标
-   - 语言生动，故事性强
-
-2. **补充文书**
-   - 针对具体学校和专业
-   - 展示对学校的了解
-   - 说明选择理由
-
-3. **写作技巧**
-   - 真实性：避免夸大和虚构
-   - 具体性：用具体事例支撑观点
-   - 独特性：展示与众不同的一面
-
-### 推荐信
-1. **推荐人选择**
-   - 核心学科老师（2封）
-   - 升学指导老师（1封）
-   - 课外活动指导老师（可选）
-
-2. **推荐信质量**
-   - 选择了解你的老师
-   - 提前沟通，提供材料
-   - 体现学术能力和个人品质
-
-## 学校选择
-
-### 选校策略
-1. **梯度搭配**
-   - 冲刺学校：2-3所
-   - 匹配学校：4-5所
-   - 保底学校：2-3所
-
-2. **考虑因素**
-   - 学术声誉和专业排名
-   - 地理位置和气候
-   - 校园文化和氛围
-   - 学费和奖学金政策
-
-### 学校类型
-1. **综合性大学**：研究型大学，专业齐全
-2. **文理学院**：小班教学，注重本科教育
-3. **专业学院**：特定领域的专门院校
-
-## 申请技巧
-
-### 时间管理
-- 制定详细的申请时间表
-- 提前准备，避免临时抱佛脚
-- 合理分配各项任务的时间
-
-### 材料准备
-- 建立申请材料清单
-- 定期检查和更新
-- 备份所有重要文件
-
-### 面试准备
-- 了解常见面试问题
-- 练习口语表达
-- 准备具体的例子和故事
-
-## 常见误区
-
-### 申请误区
-1. **只看排名**：忽视学校匹配度
-2. **活动堆砌**：数量多但缺乏深度
-3. **文书模板化**：缺乏个人特色
-4. **准备不足**：时间安排不合理
-
-### 心态误区
-1. **过度焦虑**：影响正常发挥
-2. **盲目自信**：低估申请难度
-3. **攀比心理**：与他人过度比较
-4. **功利主义**：只为申请而活动
-
-## 申请结果
-
-### 录取情况
-经过一年的努力，我最终收到了：
-- 哈佛大学：录取
-- 斯坦福大学：录取
-- MIT：等待名单
-- 加州大学伯克利分校：录取
-- 纽约大学：录取（奖学金）
-
-### 选择考虑
-最终选择哈佛大学的原因：
-- 学术声誉和资源
-- 校园文化匹配
-- 地理位置偏好
-- 未来发展机会
-
-## 经验总结
-
-### 成功要素
-1. **早期规划**：从高一开始准备
-2. **全面发展**：学术和课外并重
-3. **个性展示**：突出个人特色
-4. **坚持不懈**：保持长期努力
-
-### 给学弟学妹的建议
-1. **保持初心**：不要为了申请而申请
-2. **享受过程**：在准备中成长和收获
-3. **寻求帮助**：利用各种资源和支持
-4. **相信自己**：每个人都有独特的价值
-
-美国大学申请是一个复杂而漫长的过程，但也是一个自我发现和成长的旅程。希望我的经验能对大家有所帮助，祝愿每位同学都能申请到心仪的大学！',
-        ARRAY['美国大学申请', '留学规划', '申请经验', '文书写作'],
-        '44444444-4444-4444-4444-444444444444'
-    );
-
--- 插入每周推荐
-INSERT INTO picks (title, kind, link, why_short, week_of, contributor) VALUES
-    (
-        '《人类简史》',
-        '书',
-        'https://book.douban.com/subject/25985021/',
-        '从认知革命到科学革命，重新审视人类发展历程',
-        DATE_TRUNC('week', NOW()),
-        '33333333-3333-3333-3333-333333333333'
-    ),
-    (
-        'Imagine Dragons - Radioactive',
-        '歌',
-        'https://music.163.com/song?id=26427662',
-        '充满力量的摇滚乐，适合学习时听',
-        DATE_TRUNC('week', NOW()),
-        '44444444-4444-4444-4444-444444444444'
-    ),
-    (
-        '《心灵奇旅》',
-        '电影',
-        'https://movie.douban.com/subject/24733428/',
-        '皮克斯的又一力作，探讨人生意义和梦想',
-        DATE_TRUNC('week', NOW()) - INTERVAL '1 week',
-        '22222222-2222-2222-2222-222222222222'
-    ),
-    (
-        '《科学美国人》',
-        '刊物',
-        'https://www.scientificamerican.com/',
-        '权威科学杂志，了解最新科技发展',
-        DATE_TRUNC('week', NOW()) - INTERVAL '1 week',
-        '33333333-3333-3333-3333-333333333333'
-    );
-
--- 插入生日数据
-INSERT INTO birthdays (student_name, class_grade, birthday, wishes, owner_id) VALUES
-    ('王小明', '高三1班', '2024-08-25', '祝你生日快乐，学业进步！', '33333333-3333-3333-3333-333333333333'),
-    ('李小红', '高二3班', '2024-08-28', '愿你永远开心快乐！', '44444444-4444-4444-4444-444444444444'),
-    ('张小强', '高一2班', '2024-09-05', '生日快乐，健康成长！', '33333333-3333-3333-3333-333333333333'),
-    ('陈小美', '高三2班', '2024-09-12', '祝你前程似锦！', '44444444-4444-4444-4444-444444444444'),
-    ('刘小华', '高二1班', '2024-09-18', '生日快乐，心想事成！', '22222222-2222-2222-2222-222222222222'),
-    ('赵小亮', '高一3班', '2024-09-25', '愿你学习进步，身体健康！', '33333333-3333-3333-3333-333333333333');
-
--- 插入考试数据
-INSERT INTO exams (exam_title, exam_type, organization, course_or_subject, start_at, end_at, location, registration_deadline, notes, created_by) VALUES
-    (
-        'AP Calculus BC',
-        'AP',
-        'College Board',
-        'Calculus BC',
-        '2024-05-13 08:00:00+08',
-        '2024-05-13 12:00:00+08',
-        '学校考试中心',
-        '2024-03-15',
-        'AP微积分BC考试，需要带计算器',
-        '22222222-2222-2222-2222-222222222222'
-    ),
-    (
-        'AP Physics C: Mechanics',
-        'AP',
-        'College Board',
-        'Physics C',
-        '2024-05-14 08:00:00+08',
-        '2024-05-14 10:30:00+08',
-        '学校考试中心',
-        '2024-03-15',
-        'AP物理C力学考试',
-        '22222222-2222-2222-2222-222222222222'
-    ),
-    (
-        'TOEFL iBT',
-        '标准化',
-        'ETS',
-        'English',
-        '2024-09-15 09:00:00+08',
-        '2024-09-15 13:00:00+08',
-        '市考试中心',
-        '2024-08-15',
-        '托福考试，需要提前到场',
-        '22222222-2222-2222-2222-222222222222'
-    ),
-    (
-        '高三第一次月考',
-        '校内',
-        '学校',
-        '全科',
-        '2024-09-20 08:00:00+08',
-        '2024-09-22 17:00:00+08',
-        '各班教室',
-        '2024-09-18',
-        '高三年级第一次月考，包含语数英理化生',
-        '22222222-2222-2222-2222-222222222222'
-    ),
-    (
-        'AMC 12',
-        '竞赛',
-        'MAA',
-        'Mathematics',
-        '2024-11-08 14:30:00+08',
-        '2024-11-08 15:45:00+08',
-        '学校数学教室',
-        '2024-10-15',
-        '美国数学竞赛12年级组',
-        '22222222-2222-2222-2222-222222222222'
-    ),
-    (
-        '期中考试',
-        '校内',
-        '学校',
-        '全科',
-        '2024-11-15 08:00:00+08',
-        '2024-11-17 17:00:00+08',
-        '各班教室',
-        '2024-11-13',
-        '全校期中考试',
-        '22222222-2222-2222-2222-222222222222'
-    );
+-- ===========================
+-- seed.sql  (idempotent)
+-- 插入基础标签/示例内容；选用第一位管理员或第一位用户作为作者
+-- ===========================
+
+DO $$
+DECLARE
+  v_author uuid;
+  v_topic_id bigint;
+  v_news_campus_id bigint;
+  v_news_global_id bigint;
+  v_share_id bigint;
+  -- 新增：前端展示新闻对应的ID
+  v_news_techfest_id bigint;
+  v_news_competition_id bigint;
+  v_news_clubfest_id bigint;
+  v_news_award_id bigint;
+BEGIN
+  -- 0) tags
+  INSERT INTO public.tags(name) VALUES
+    ('campus'),('global'),('music'),('books'),('film'),
+    -- 新增中文标签
+    ('科技'),('创新'),('比赛'),('教育'),('社团'),('获奖'),('AI')
+  ON CONFLICT(name) DO NOTHING;
+
+  -- 1) 选择作者（优先 ADMIN；否则第一位 profile）
+  SELECT id INTO v_author
+  FROM public.profiles
+  WHERE role='ADMIN'::public.role
+  ORDER BY created_at
+  LIMIT 1;
+
+  IF v_author IS NULL THEN
+    SELECT id INTO v_author
+    FROM public.profiles
+    ORDER BY created_at
+    LIMIT 1;
+  END IF;
+
+  IF v_author IS NULL THEN
+    RAISE NOTICE 'No profiles found. Please register at least one user, then re-run seed.';
+    RETURN;
+  END IF;
+
+  -- 2) news
+  IF NOT EXISTS (SELECT 1 FROM public.news WHERE title='Welcome to Campus Pulse') THEN
+    INSERT INTO public.news
+      (title, content_rich, cover_url, category, status, author_id, published_at)
+    VALUES
+      ('Welcome to Campus Pulse',
+       'This is a sample published campus news for the club.',
+       NULL,
+       'CAMPUS'::public.news_category,
+       'PUBLISHED'::public.publish_status,
+       v_author,
+       NOW())
+    RETURNING id INTO v_news_campus_id;
+  ELSE
+    SELECT id INTO v_news_campus_id FROM public.news WHERE title='Welcome to Campus Pulse' LIMIT 1;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.news WHERE title='Global Snapshot: Weekly') THEN
+    INSERT INTO public.news
+      (title, content_rich, cover_url, category, status, author_id)
+    VALUES
+      ('Global Snapshot: Weekly',
+       'Draft example for global news.',
+       NULL,
+       'GLOBAL'::public.news_category,
+       'DRAFT'::public.publish_status,
+       v_author)
+    RETURNING id INTO v_news_global_id;
+  ELSE
+    SELECT id INTO v_news_global_id FROM public.news WHERE title='Global Snapshot: Weekly' LIMIT 1;
+  END IF;
+
+  -- 新增：根据前端展示的中文新闻，插入到种子数据（幂等）
+  IF NOT EXISTS (SELECT 1 FROM public.news WHERE title='学校成功举办第十届科技创新节') THEN
+    INSERT INTO public.news (title, content_rich, cover_url, category, status, author_id, published_at)
+    VALUES (
+      '学校成功举办第十届科技创新节',
+      $BODY$
+<p>2024年1月10日，我校第十届科技创新节在体育馆圆满落幕。本次活动以“创新引领未来”为主题，展示了学生在人工智能、环保科技、生物医学、新能源等领域的优秀成果。</p>
+
+<h2>活动亮点</h2>
+<ul>
+<li><strong>参展规模：</strong>500余名学生参与，展出200余件创新作品。</li>
+<li><strong>前沿方向：</strong>从AI到绿色科技，创意兼具实用与探索价值。</li>
+<li><strong>专家点评：</strong>多位业界专家现场指导，共同探讨项目落地与提升空间。</li>
+</ul>
+
+<p>学校将持续支持学生的科研探索，为培养具有创新精神与实践能力的新时代人才夯实基础。</p>
+      $BODY$,
+      NULL,
+      'CAMPUS'::public.news_category,
+      'PUBLISHED'::public.publish_status,
+      v_author,
+      to_timestamp('2024-01-10','YYYY-MM-DD')
+    ) RETURNING id INTO v_news_techfest_id;
+  ELSE
+    SELECT id INTO v_news_techfest_id FROM public.news WHERE title='学校成功举办第十届科技创新节' LIMIT 1;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.news WHERE title='学校举办科技创新大赛') THEN
+    INSERT INTO public.news (title, content_rich, cover_url, category, status, author_id, published_at)
+    VALUES (
+      '学校举办科技创新大赛',
+      '本周学校举办年度科技创新大赛，涵盖人工智能、机器人、环保等多个方向，吸引全校200多名学生参与。',
+      NULL,
+      'CAMPUS'::public.news_category,
+      'PUBLISHED'::public.publish_status,
+      v_author,
+      to_timestamp('2024-01-08','YYYY-MM-DD')
+    ) RETURNING id INTO v_news_competition_id;
+  ELSE
+    SELECT id INTO v_news_competition_id FROM public.news WHERE title='学校举办科技创新大赛' LIMIT 1;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.news WHERE title='社团文化节圆满落幕') THEN
+    INSERT INTO public.news (title, content_rich, cover_url, category, status, author_id, published_at)
+    VALUES (
+      '社团文化节圆满落幕',
+      '为期三天的社团文化节在同学们的热情参与下落下帷幕，各社团带来了精彩的展示与演出，丰富了校园文化生活。',
+      NULL,
+      'CAMPUS'::public.news_category,
+      'PUBLISHED'::public.publish_status,
+      v_author,
+      to_timestamp('2024-01-06','YYYY-MM-DD')
+    ) RETURNING id INTO v_news_clubfest_id;
+  ELSE
+    SELECT id INTO v_news_clubfest_id FROM public.news WHERE title='社团文化节圆满落幕' LIMIT 1;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.news WHERE title='我校学生获得市级奖项') THEN
+    INSERT INTO public.news (title, content_rich, cover_url, category, status, author_id, published_at)
+    VALUES (
+      '我校学生获得市级奖项',
+      '在市级学科竞赛中，我校多名学生荣获佳绩，展现了扎实的学术功底与出色的创新能力。',
+      NULL,
+      'CAMPUS'::public.news_category,
+      'PUBLISHED'::public.publish_status,
+      v_author,
+      to_timestamp('2024-01-05','YYYY-MM-DD')
+    ) RETURNING id INTO v_news_award_id;
+  ELSE
+    SELECT id INTO v_news_award_id FROM public.news WHERE title='我校学生获得市级奖项' LIMIT 1;
+  END IF;
+
+  -- 为新增新闻绑定标签（如已存在则忽略）
+  INSERT INTO public.news_tags(news_id, tag_id)
+  SELECT v_news_techfest_id, t.id FROM public.tags t WHERE t.name IN ('campus','科技','创新','比赛','教育')
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.news_tags(news_id, tag_id)
+  SELECT v_news_competition_id, t.id FROM public.tags t WHERE t.name IN ('campus','科技','创新','比赛')
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.news_tags(news_id, tag_id)
+  SELECT v_news_clubfest_id, t.id FROM public.tags t WHERE t.name IN ('campus','社团')
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.news_tags(news_id, tag_id)
+  SELECT v_news_award_id, t.id FROM public.tags t WHERE t.name IN ('campus','获奖')
+  ON CONFLICT DO NOTHING;
+
+  -- 旧的示例标签绑定（保留）
+  INSERT INTO public.news_tags(news_id, tag_id)
+  SELECT v_news_campus_id, t.id FROM public.tags t WHERE t.name='campus'
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.news_tags(news_id, tag_id)
+  SELECT v_news_global_id, t.id FROM public.tags t WHERE t.name='global'
+  ON CONFLICT DO NOTHING;
+
+  -- 3) sharespeare
+  IF NOT EXISTS (SELECT 1 FROM public.sharespeare WHERE title='Editor Picks #1') THEN
+    INSERT INTO public.sharespeare
+      (title, content_rich, media_url, status, author_id, published_at)
+    VALUES
+      ('Editor Picks #1',
+       'Books, songs, and films we loved this week.',
+       NULL,
+       'PUBLISHED'::public.publish_status,
+       v_author,
+       NOW())
+    RETURNING id INTO v_share_id;
+  ELSE
+    SELECT id INTO v_share_id FROM public.sharespeare WHERE title='Editor Picks #1' LIMIT 1;
+  END IF;
+
+  -- 4) topic + comments
+  IF NOT EXISTS (SELECT 1 FROM public.topics WHERE title='Welcome Thread') THEN
+    INSERT INTO public.topics (title, body_rich, status, author_id)
+    VALUES ('Welcome Thread','Introduce yourself and say hi!','OPEN'::public.topic_status, v_author)
+    RETURNING id INTO v_topic_id;
+  ELSE
+    SELECT id INTO v_topic_id FROM public.topics WHERE title='Welcome Thread' LIMIT 1;
+  END IF;
+
+  IF v_topic_id IS NOT NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM public.comments WHERE topic_id=v_topic_id AND status='APPROVED'::public.comment_status) THEN
+      INSERT INTO public.comments (topic_id, author_id, body_rich, status, moderated_at)
+      VALUES (v_topic_id, v_author, 'Welcome to the board! 🎉', 'APPROVED'::public.comment_status, NOW());
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM public.comments WHERE topic_id=v_topic_id AND status='PENDING'::public.comment_status) THEN
+      INSERT INTO public.comments (topic_id, author_id, body_rich, status)
+      VALUES (v_topic_id, v_author, 'This comment is waiting for review.', 'PENDING'::public.comment_status);
+    END IF;
+  END IF;
+
+  -- 5) calendar events
+  INSERT INTO public.calendar_events
+    (title,"date",type,source,description,visibility,created_by)
+  SELECT 'AP Calculus Exam', CURRENT_DATE + INTERVAL '30 days',
+         'EXAM'::public.event_type, 'AP'::public.event_source,
+         'Mock AP Calculus exam','PUBLIC'::public.visibility,v_author
+  WHERE NOT EXISTS (SELECT 1 FROM public.calendar_events WHERE title='AP Calculus Exam');
+
+  INSERT INTO public.calendar_events
+    (title,"date",type,source,description,visibility,created_by)
+  SELECT 'UCLA Campus Tour', CURRENT_DATE + INTERVAL '45 days',
+         'EVENT'::public.event_type, 'UCLA'::public.event_source,
+         'Visit UCLA campus with advisors','PUBLIC'::public.visibility,v_author
+  WHERE NOT EXISTS (SELECT 1 FROM public.calendar_events WHERE title='UCLA Campus Tour');
+
+  RAISE NOTICE 'Seed done. Author used: %', v_author;
+END $$;
+
+-- 可选：把某些邮箱提为管理员（先注册过才有 profile）
+-- update public.profiles set role='ADMIN' where email in ('admin@school.edu');
+-- update public.profiles set role='MOD'   where email in ('ta@school.edu');

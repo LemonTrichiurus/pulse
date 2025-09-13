@@ -111,7 +111,12 @@ export default function MessageBoard() {
               <MessageSquare className="h-6 w-6 text-primary" />
               <CardTitle className="text-2xl">本周话题</CardTitle>
             </div>
-            <Badge variant="secondary">{currentTopic.week}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{currentTopic.week}</Badge>
+              <Button variant="outline" size="sm">
+                查看过去话题
+              </Button>
+            </div>
           </div>
           <CardTitle className="text-xl text-primary">{currentTopic.title}</CardTitle>
           <CardDescription className="text-base">
@@ -126,122 +131,116 @@ export default function MessageBoard() {
         </CardContent>
       </Card>
 
-      {/* 发表留言 */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5" />
-            发表留言
-          </CardTitle>
-          <CardDescription>
-            分享你的想法和观点，所有留言需要经过审核后才会显示
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="author">姓名</Label>
-              <Input
-                id="author"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="请输入你的姓名"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="message">留言内容</Label>
-              <Textarea
-                id="message"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="分享你对本周话题的想法..."
-                rows={4}
-                required
-              />
-            </div>
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? '提交中...' : '发表留言'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {/* 讨论区域 - 左右分栏布局 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* 左侧 - 讨论区 */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">讨论区</h2>
+            <Badge variant="outline">{messages.length} 条留言</Badge>
+          </div>
 
-      {/* 留言列表 */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">留言列表</h2>
-          <Badge variant="outline">{messages.length} 条留言</Badge>
-        </div>
-
-        {messages.map((message) => (
-          <Card key={message.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                    {message.author.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{message.author}</span>
-                      {message.status === 'pending' && (
-                        <Badge variant="secondary" className="text-xs">
-                          审核中
-                        </Badge>
-                      )}
-                      {message.status === 'approved' && (
-                        <Badge variant="default" className="text-xs">
-                          已审核
-                        </Badge>
-                      )}
+          {messages.map((message) => (
+            <Card key={message.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                      {message.author.charAt(0)}
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>{message.timestamp}</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{message.author}</span>
+                        {message.status === 'pending' && (
+                          <Badge variant="secondary" className="text-xs">
+                            审核中
+                          </Badge>
+                        )}
+                        {message.status === 'approved' && (
+                          <Badge variant="default" className="text-xs">
+                            已审核
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{message.timestamp}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-base leading-relaxed mb-4">{message.content}</p>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLike(message.id)}
+                    className="flex items-center gap-1 text-muted-foreground hover:text-red-500"
+                  >
+                    <Heart className="h-4 w-4" />
+                    <span>{message.likes}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-muted-foreground"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>{message.replies}</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* 右侧 - 发表评论 */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">发表评论</h2>
+          <Card className="sticky top-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5" />
+                参与讨论
+              </CardTitle>
+              <CardDescription>
+                分享你的想法和观点，所有留言需要经过审核后才会显示
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-base leading-relaxed mb-4">{message.content}</p>
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleLike(message.id)}
-                  className="flex items-center gap-1 text-muted-foreground hover:text-red-500"
-                >
-                  <Heart className="h-4 w-4" />
-                  <span>{message.likes}</span>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="author">姓名</Label>
+                  <Input
+                    id="author"
+                    value={authorName}
+                    onChange={(e) => setAuthorName(e.target.value)}
+                    placeholder="请输入你的姓名"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="message">留言内容</Label>
+                  <Textarea
+                    id="message"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="分享你对本周话题的想法..."
+                    rows={6}
+                    required
+                  />
+                </div>
+                <Button type="submit" disabled={isSubmitting} className="w-full">
+                  {isSubmitting ? '提交中...' : '发表留言'}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-1 text-muted-foreground"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span>{message.replies}</span>
-                </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
-        ))}
+        </div>
       </div>
 
-      {/* 使用说明 */}
-      <Card className="mt-12 bg-accent/30">
-        <CardHeader>
-          <CardTitle className="text-lg">使用说明</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• 每周会更新一个新的讨论话题</p>
-          <p>• 所有留言需要经过管理员审核后才会公开显示</p>
-          <p>• 请文明发言，尊重他人观点</p>
-          <p>• 鼓励分享真实想法和建设性意见</p>
-        </CardContent>
-      </Card>
     </div>
   )
 }

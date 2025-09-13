@@ -1,439 +1,250 @@
--- 启用必要的扩展
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+-- ===========================
+-- init.sql  (idempotent)
+-- 建枚举 / 表 / 函数 / 触发器 / 索引 / 媒体桶
+-- 执行顺序：init → rls-policies → seed
+-- ===========================
 
--- 创建枚举类型
-CREATE TYPE user_role AS ENUM ('member', 'moderator', 'admin');
-CREATE TYPE news_category AS ENUM ('校园', '全球');
-CREATE TYPE news_status AS ENUM ('draft', 'published');
-CREATE TYPE topic_category AS ENUM ('学习', '社团', '活动', '生活', '建议', '其他');
-CREATE TYPE topic_status AS ENUM ('open', 'locked');
-CREATE TYPE sharespeare_type AS ENUM ('学习方法', '社团经历', '竞赛经验', '大学申请心得');
-CREATE TYPE picks_kind AS ENUM ('书', '歌', '电影', '刊物');
-CREATE TYPE submission_type AS ENUM ('News', 'Topic', 'Sharespeare', 'Picks', 'Birthday', 'Exam');
-CREATE TYPE submission_status AS ENUM ('pending', 'approved', 'rejected');
+-- ---------- Enums ----------
+do $$
+begin
+  if not exists (
+    select 1 from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where t.typname = 'role' and n.nspname = 'public'
+  ) then
+    create type public.role as enum ('ADMIN','MOD','MEMBER');
+  end if;
 
--- 用户档案表
-CREATE TABLE profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    display_name TEXT,
-    avatar_url TEXT,
-    role user_role DEFAULT 'member',
-    created_at TIMESTAMPTZ DEFAULT NOW()
+  if not exists (select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+                 where t.typname='news_category' and n.nspname='public') then
+    create type public.news_category as enum ('CAMPUS','GLOBAL');
+  end if;
+
+  if not exists (select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+                 where t.typname='publish_status' and n.nspname='public') then
+    create type public.publish_status as enum ('DRAFT','PUBLISHED');
+  end if;
+
+  if not exists (select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+                 where t.typname='comment_status' and n.nspname='public') then
+    create type public.comment_status as enum ('PENDING','APPROVED','REJECTED');
+  end if;
+
+  if not exists (select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+                 where t.typname='topic_status' and n.nspname='public') then
+    create type public.topic_status as enum ('OPEN','LOCKED');
+  end if;
+
+  if not exists (select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+                 where t.typname='event_type' and n.nspname='public') then
+    create type public.event_type as enum ('EXAM','EVENT');
+  end if;
+
+  if not exists (select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+                 where t.typname='event_source' and n.nspname='public') then
+    create type public.event_source as enum ('AP','UCLA','OTHER');
+  end if;
+
+  if not exists (select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+                 where t.typname='visibility' and n.nspname='public') then
+    create type public.visibility as enum ('PUBLIC','PRIVATE');
+  end if;
+end $$;
+
+-- ---------- Tables ----------
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text unique,
+  display_name text,
+  avatar_url text,
+  role public.role not null default 'MEMBER',
+  created_at timestamptz not null default now()
 );
 
--- 新闻表
-CREATE TABLE news (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title TEXT NOT NULL,
-    summary TEXT,
-    cover_url TEXT,
-    body TEXT NOT NULL,
-    author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    category news_category NOT NULL,
-    published_at TIMESTAMPTZ,
-    tags TEXT[] DEFAULT '{}',
-    status news_status DEFAULT 'draft',
-    views INTEGER DEFAULT 0,
-    allow_comments BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    search TSVECTOR
+create table if not exists public.news (
+  id bigserial primary key,
+  title text not null,
+  content_rich text not null,
+  cover_url text,
+  category public.news_category not null default 'CAMPUS',
+  status public.publish_status not null default 'DRAFT',
+  author_id uuid not null references public.profiles(id) on delete set null,
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint news_published_requires_time
+    check (status <> 'PUBLISHED'::public.publish_status or published_at is not null)
 );
 
--- 话题表
-CREATE TABLE topics (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title TEXT NOT NULL,
-    category topic_category NOT NULL,
-    starter_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    body TEXT NOT NULL,
-    tags TEXT[] DEFAULT '{}',
-    upvotes INTEGER DEFAULT 0,
-    pinned BOOLEAN DEFAULT false,
-    status topic_status DEFAULT 'open',
-    last_activity_at TIMESTAMPTZ DEFAULT NOW(),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+-- 新增：是否为头版/精选标记（幂等）
+alter table public.news
+  add column if not exists is_featured boolean not null default false;
+
+-- 方案C：置顶排序权重（数值越大越靠前，可为空；为空表示非置顶）
+alter table public.news
+  add column if not exists top_rank integer;
+
+create index if not exists idx_news_status on public.news(status);
+create index if not exists idx_news_published_at on public.news(published_at desc);
+create index if not exists idx_news_is_featured on public.news(is_featured);
+-- 按置顶权重与发布时间的排序索引（NULLS LAST 以便未置顶的靠后）
+create index if not exists idx_news_top_rank_published on public.news(top_rank desc nulls last, published_at desc);
+
+create table if not exists public.sharespeare (
+  id bigserial primary key,
+  title text not null,
+  content_rich text not null,
+  media_url text,
+  status public.publish_status not null default 'DRAFT',
+  author_id uuid not null references public.profiles(id) on delete set null,
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint sharespeare_published_requires_time
+    check (status <> 'PUBLISHED'::public.publish_status or published_at is not null)
 );
 
--- 话题评论表
-CREATE TABLE topic_comments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    topic_id UUID REFERENCES topics(id) ON DELETE CASCADE,
-    author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    body TEXT NOT NULL,
-    parent_id UUID REFERENCES topic_comments(id) ON DELETE CASCADE,
-    upvotes INTEGER DEFAULT 0,
-    is_deleted BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+create table if not exists public.topics (
+  id bigserial primary key,
+  title text not null,
+  body_rich text not null,
+  status public.topic_status not null default 'OPEN',
+  author_id uuid not null references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
--- Sharespeare 分享表
-CREATE TABLE sharespeare (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title TEXT NOT NULL,
-    advisor_name TEXT,
-    type sharespeare_type NOT NULL,
-    summary TEXT,
-    body TEXT NOT NULL,
-    resources JSONB DEFAULT '{}',
-    tags TEXT[] DEFAULT '{}',
-    author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    qna_enabled BOOLEAN DEFAULT true,
-    status news_status DEFAULT 'published',
-    published_at TIMESTAMPTZ DEFAULT NOW(),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+create table if not exists public.comments (
+  id bigserial primary key,
+  topic_id bigint not null references public.topics(id) on delete cascade,
+  author_id uuid not null references public.profiles(id) on delete set null,
+  body_rich text not null,
+  status public.comment_status not null default 'PENDING',
+  moderated_by uuid references public.profiles(id),
+  moderated_at timestamptz,
+  reason text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_comments_topic on public.comments(topic_id);
+create index if not exists idx_comments_status on public.comments(status);
+
+create table if not exists public.calendar_events (
+  id bigserial primary key,
+  title text not null,
+  "date" date not null,
+  type public.event_type not null default 'EXAM',
+  source public.event_source not null default 'OTHER',
+  description text,
+  visibility public.visibility not null default 'PUBLIC',
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_calendar_date on public.calendar_events("date");
+
+create table if not exists public.tags (
+  id bigserial primary key,
+  name text unique not null
 );
 
--- 每周推荐表
-CREATE TABLE picks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title TEXT NOT NULL,
-    kind picks_kind NOT NULL,
-    link TEXT,
-    why_short TEXT,
-    week_of DATE NOT NULL,
-    contributor UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+create table if not exists public.news_tags (
+  news_id bigint references public.news(id) on delete cascade,
+  tag_id  bigint references public.tags(id) on delete cascade,
+  primary key (news_id, tag_id)
 );
 
--- 生日墙表
-CREATE TABLE birthdays (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_name TEXT NOT NULL,
-    class_grade TEXT,
-    birthday DATE NOT NULL,
-    photo_url TEXT,
-    wishes TEXT,
-    owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+create table if not exists public.audit_logs (
+  id bigserial primary key,
+  actor_id uuid references public.profiles(id) on delete set null,
+  action text not null,
+  entity text not null,
+  entity_id text,
+  meta jsonb,
+  created_at timestamptz not null default now()
 );
 
--- 考试日历表
-CREATE TABLE exams (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    exam_title TEXT NOT NULL,
-    exam_type TEXT NOT NULL,
-    organization TEXT,
-    course_or_subject TEXT,
-    start_at TIMESTAMPTZ NOT NULL,
-    end_at TIMESTAMPTZ,
-    time_zone TEXT DEFAULT 'Asia/Shanghai',
-    location TEXT,
-    registration_deadline DATE,
-    admission_ticket_date DATE,
-    resources JSONB DEFAULT '{}',
-    tags TEXT[] DEFAULT '{}',
-    notes TEXT,
-    created_by UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    published BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- ---------- Utility functions ----------
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end $$;
 
--- 投稿表
-CREATE TABLE submissions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    submitter_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    type submission_type NOT NULL,
-    payload JSONB NOT NULL,
-    attachments JSONB DEFAULT '{}',
-    status submission_status DEFAULT 'pending',
-    reviewer UUID REFERENCES profiles(id),
-    feedback TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    reviewed_at TIMESTAMPTZ
-);
+-- 可选参数版本：既可 is_mod() 也可 is_mod(auth.uid())
+create or replace function public.is_admin(u uuid default auth.uid())
+returns boolean language sql stable as $$
+  select exists(select 1 from public.profiles p where p.id = u and p.role = 'ADMIN'::public.role);
+$$;
 
--- 新闻评论表
-CREATE TABLE news_comments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    news_id UUID REFERENCES news(id) ON DELETE CASCADE,
-    author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    body TEXT NOT NULL,
-    parent_id UUID REFERENCES news_comments(id) ON DELETE CASCADE,
-    upvotes INTEGER DEFAULT 0,
-    is_deleted BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+create or replace function public.is_mod(u uuid default auth.uid())
+returns boolean language sql stable as $$
+  select exists(select 1 from public.profiles p where p.id = u and p.role in ('ADMIN'::public.role,'MOD'::public.role));
+$$;
 
--- Sharespeare 问答表
-CREATE TABLE sharespeare_qna (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    sharespeare_id UUID REFERENCES sharespeare(id) ON DELETE CASCADE,
-    author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    body TEXT NOT NULL,
-    parent_id UUID REFERENCES sharespeare_qna(id) ON DELETE CASCADE,
-    upvotes INTEGER DEFAULT 0,
-    is_deleted BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- ---------- Triggers ----------
+drop trigger if exists news_set_updated on public.news;
+create trigger news_set_updated
+  before update on public.news
+  for each row execute function public.set_updated_at();
 
--- 创建索引
-CREATE INDEX idx_news_published_at ON news(published_at DESC) WHERE status = 'published';
-CREATE INDEX idx_news_category ON news(category);
-CREATE INDEX idx_news_author ON news(author_id);
-CREATE INDEX idx_news_tags ON news USING GIN(tags);
-CREATE INDEX idx_news_search ON news USING GIN(search);
+-- 仅允许 MOD/ADMIN 设置或修改 top_rank
+create or replace function public.enforce_top_rank_permission()
+returns trigger language plpgsql as $$
+begin
+  if tg_op = 'INSERT' then
+    if new.top_rank is not null and not public.is_mod() then
+      raise exception 'only moderators can set top_rank';
+    end if;
+  elsif tg_op = 'UPDATE' then
+    if coalesce(new.top_rank, -1) <> coalesce(old.top_rank, -1) and not public.is_mod() then
+      raise exception 'only moderators can change top_rank';
+    end if;
+  end if;
+  return new;
+end $$;
 
-CREATE INDEX idx_topics_last_activity ON topics(last_activity_at DESC);
-CREATE INDEX idx_topics_category ON topics(category);
-CREATE INDEX idx_topics_pinned ON topics(pinned DESC, last_activity_at DESC);
+drop trigger if exists news_enforce_top_rank on public.news;
+create trigger news_enforce_top_rank
+  before insert or update on public.news
+  for each row execute function public.enforce_top_rank_permission();
 
-CREATE INDEX idx_topic_comments_topic ON topic_comments(topic_id);
-CREATE INDEX idx_topic_comments_parent ON topic_comments(parent_id);
+drop trigger if exists sharespeare_set_updated on public.sharespeare;
+create trigger sharespeare_set_updated
+  before update on public.sharespeare
+  for each row execute function public.set_updated_at();
 
-CREATE INDEX idx_exams_start_date ON exams(start_at);
-CREATE INDEX idx_exams_type ON exams(exam_type);
-CREATE INDEX idx_exams_organization ON exams(organization);
+drop trigger if exists topics_set_updated on public.topics;
+create trigger topics_set_updated
+  before update on public.topics
+  for each row execute function public.set_updated_at();
 
-CREATE INDEX idx_birthdays_date ON birthdays(birthday);
-CREATE INDEX idx_picks_week ON picks(week_of DESC);
+drop trigger if exists calendar_set_updated on public.calendar_events;
+create trigger calendar_set_updated
+  before update on public.calendar_events
+  for each row execute function public.set_updated_at();
 
--- 创建触发器函数
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- 新用户自动创建 profile
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public as $$
+begin
+  insert into public.profiles(id, email, display_name)
+  values (new.id, new.email, split_part(new.email,'@',1))
+  on conflict (id) do nothing;
+  return new;
+end $$;
 
-CREATE OR REPLACE FUNCTION update_search_vector()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.search := to_tsvector('chinese', COALESCE(NEW.title, '') || ' ' || COALESCE(NEW.body, '') || ' ' || array_to_string(NEW.tags, ' '));
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
 
-CREATE OR REPLACE FUNCTION update_topic_activity()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE topics SET last_activity_at = NOW() WHERE id = NEW.topic_id;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- 创建触发器
-CREATE TRIGGER update_news_updated_at BEFORE UPDATE ON news
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_exams_updated_at BEFORE UPDATE ON exams
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_sharespeare_updated_at BEFORE UPDATE ON sharespeare
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_news_search_vector BEFORE INSERT OR UPDATE ON news
-    FOR EACH ROW EXECUTE FUNCTION update_search_vector();
-
-CREATE TRIGGER update_topic_activity_trigger AFTER INSERT ON topic_comments
-    FOR EACH ROW EXECUTE FUNCTION update_topic_activity();
-
--- 创建 RPC 函数
-CREATE OR REPLACE FUNCTION increment_views(news_id UUID)
-RETURNS VOID AS $$
-BEGIN
-    UPDATE news SET views = views + 1 WHERE id = news_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 启用 RLS
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE news ENABLE ROW LEVEL SECURITY;
-ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE topic_comments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE news_comments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sharespeare ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sharespeare_qna ENABLE ROW LEVEL SECURITY;
-ALTER TABLE picks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE birthdays ENABLE ROW LEVEL SECURITY;
-ALTER TABLE exams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-
--- RLS 策略
--- Profiles 策略
-CREATE POLICY "Public profiles are viewable by everyone" ON profiles
-    FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert their own profile" ON profiles
-    FOR INSERT WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Users can update own profile" ON profiles
-    FOR UPDATE USING (auth.uid() = id);
-
--- News 策略
-CREATE POLICY "Published news are viewable by everyone" ON news
-    FOR SELECT USING (status = 'published' OR auth.uid() = author_id);
-
-CREATE POLICY "Authenticated users can create news" ON news
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Authors and moderators can update news" ON news
-    FOR UPDATE USING (
-        auth.uid() = author_id OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Topics 策略
-CREATE POLICY "Topics are viewable by everyone" ON topics
-    FOR SELECT USING (true);
-
-CREATE POLICY "Authenticated users can create topics" ON topics
-    FOR INSERT WITH CHECK (auth.uid() = starter_id);
-
-CREATE POLICY "Authors and moderators can update topics" ON topics
-    FOR UPDATE USING (
-        auth.uid() = starter_id OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Comments 策略
-CREATE POLICY "Comments are viewable by everyone" ON topic_comments
-    FOR SELECT USING (NOT is_deleted);
-
-CREATE POLICY "Authenticated users can create comments" ON topic_comments
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Authors and moderators can update comments" ON topic_comments
-    FOR UPDATE USING (
-        auth.uid() = author_id OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- News Comments 策略
-CREATE POLICY "News comments are viewable by everyone" ON news_comments
-    FOR SELECT USING (NOT is_deleted);
-
-CREATE POLICY "Authenticated users can create news comments" ON news_comments
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Authors and moderators can update news comments" ON news_comments
-    FOR UPDATE USING (
-        auth.uid() = author_id OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Sharespeare 策略
-CREATE POLICY "Published sharespeare are viewable by everyone" ON sharespeare
-    FOR SELECT USING (status = 'published' OR auth.uid() = author_id);
-
-CREATE POLICY "Authenticated users can create sharespeare" ON sharespeare
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Authors and moderators can update sharespeare" ON sharespeare
-    FOR UPDATE USING (
-        auth.uid() = author_id OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Sharespeare QnA 策略
-CREATE POLICY "Sharespeare QnA are viewable by everyone" ON sharespeare_qna
-    FOR SELECT USING (NOT is_deleted);
-
-CREATE POLICY "Authenticated users can create sharespeare QnA" ON sharespeare_qna
-    FOR INSERT WITH CHECK (auth.uid() = author_id);
-
-CREATE POLICY "Authors and moderators can update sharespeare QnA" ON sharespeare_qna
-    FOR UPDATE USING (
-        auth.uid() = author_id OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Picks 策略
-CREATE POLICY "Picks are viewable by everyone" ON picks
-    FOR SELECT USING (true);
-
-CREATE POLICY "Authenticated users can create picks" ON picks
-    FOR INSERT WITH CHECK (auth.uid() = contributor);
-
-CREATE POLICY "Contributors and moderators can update picks" ON picks
-    FOR UPDATE USING (
-        auth.uid() = contributor OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Birthdays 策略
-CREATE POLICY "Birthdays are viewable by everyone" ON birthdays
-    FOR SELECT USING (true);
-
-CREATE POLICY "Authenticated users can create birthdays" ON birthdays
-    FOR INSERT WITH CHECK (auth.uid() = owner_id);
-
-CREATE POLICY "Owners and moderators can update birthdays" ON birthdays
-    FOR UPDATE USING (
-        auth.uid() = owner_id OR 
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Exams 策略
-CREATE POLICY "Published exams are viewable by everyone" ON exams
-    FOR SELECT USING (published = true);
-
-CREATE POLICY "Moderators can create exams" ON exams
-    FOR INSERT WITH CHECK (
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
-CREATE POLICY "Moderators can update exams" ON exams
-    FOR UPDATE USING (
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- Submissions 策略
-CREATE POLICY "Users can view their own submissions" ON submissions
-    FOR SELECT USING (auth.uid() = submitter_id);
-
-CREATE POLICY "Moderators can view all submissions" ON submissions
-    FOR SELECT USING (
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
-CREATE POLICY "Authenticated users can create submissions" ON submissions
-    FOR INSERT WITH CHECK (auth.uid() = submitter_id);
-
-CREATE POLICY "Moderators can update submissions" ON submissions
-    FOR UPDATE USING (
-        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
-    );
-
--- 创建存储桶
-INSERT INTO storage.buckets (id, name, public) VALUES ('uploads', 'uploads', true);
-
--- 存储策略
-CREATE POLICY "Anyone can view uploads" ON storage.objects
-    FOR SELECT USING (bucket_id = 'uploads');
-
-CREATE POLICY "Authenticated users can upload files" ON storage.objects
-    FOR INSERT WITH CHECK (
-        bucket_id = 'uploads' AND 
-        auth.role() = 'authenticated'
-    );
-
-CREATE POLICY "Users can update their own uploads" ON storage.objects
-    FOR UPDATE USING (
-        bucket_id = 'uploads' AND 
-        auth.uid()::text = (storage.foldername(name))[1]
-    );
-
-CREATE POLICY "Users can delete their own uploads" ON storage.objects
-    FOR DELETE USING (
-        bucket_id = 'uploads' AND 
-        auth.uid()::text = (storage.foldername(name))[1]
-    );
-
--- 创建自动插入 profile 的触发器
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id, display_name, role)
-    VALUES (NEW.id, NEW.raw_user_meta_data->>'display_name', 'member');
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- ---------- Storage: ensure media bucket ----------
+do $$
+begin
+  if not exists (select 1 from storage.buckets where id = 'media') then
+    perform storage.create_bucket('media', public => true); -- 如需私有改为 false
+  end if;
+end $$;

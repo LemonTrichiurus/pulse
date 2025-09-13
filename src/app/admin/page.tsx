@@ -1,530 +1,297 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, MessageSquare, Users, FileText, Eye, Check, X, Search, Filter, Calendar, TrendingUp } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
-import { toast } from 'sonner'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  FileText, 
+  MessageSquare, 
+  Calendar, 
+  Users, 
+  AlertCircle,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  Eye
+} from 'lucide-react'
+import { AdminGuard } from '@/components/auth/AuthGuard'
+import { useAuth } from '@/contexts/Authcontext'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
-// 模拟待审核留言数据
-const mockPendingMessages = [
-  {
-    id: '1',
-    content: '这周的话题很有意思，我觉得可以从多个角度来讨论这个问题。希望大家都能积极参与！',
-    author: '张同学',
-    submittedAt: '2024-01-15T14:30:00Z',
-    status: 'pending' as const,
-    topic: '本周话题：如何平衡学习和兴趣爱好？',
-    likes: 0,
-    reports: 0
-  },
-  {
-    id: '2',
-    content: '我认为学校的食堂菜品需要改进，希望能增加更多健康的选择。另外，价格也可以更合理一些。',
-    author: '李同学',
-    submittedAt: '2024-01-15T16:45:00Z',
-    status: 'pending' as const,
-    topic: '本周话题：如何平衡学习和兴趣爱好？',
-    likes: 0,
-    reports: 1
-  },
-  {
-    id: '3',
-    content: '建议学校图书馆延长开放时间，特别是在考试期间。现在的开放时间对于需要复习的同学来说有点短。',
-    author: '王同学',
-    submittedAt: '2024-01-15T18:20:00Z',
-    status: 'pending' as const,
-    topic: '本周话题：如何平衡学习和兴趣爱好？',
-    likes: 0,
-    reports: 0
-  },
-  {
-    id: '4',
-    content: '这个话题让我想到了时间管理的重要性。我觉得制定合理的计划是关键，既要保证学习效果，也要留出时间发展兴趣。',
-    author: '赵同学',
-    submittedAt: '2024-01-15T20:10:00Z',
-    status: 'pending' as const,
-    topic: '本周话题：如何平衡学习和兴趣爱好？',
-    likes: 0,
-    reports: 0
-  }
-]
-
-// 模拟已审核留言数据
-const mockReviewedMessages = [
-  {
-    id: '5',
-    content: '感谢学校组织这样的讨论活动，让我们有机会表达自己的想法和建议。',
-    author: '陈同学',
-    submittedAt: '2024-01-14T10:15:00Z',
-    reviewedAt: '2024-01-14T11:00:00Z',
-    status: 'approved' as const,
-    topic: '上周话题：对学校活动的建议',
-    likes: 15,
-    reports: 0,
-    reviewer: '管理员A'
-  },
-  {
-    id: '6',
-    content: '希望学校能够增加更多的社团活动，丰富我们的课余生活。',
-    author: '刘同学',
-    submittedAt: '2024-01-14T14:30:00Z',
-    reviewedAt: '2024-01-14T15:20:00Z',
-    status: 'approved' as const,
-    topic: '上周话题：对学校活动的建议',
-    likes: 8,
-    reports: 0,
-    reviewer: '管理员B'
-  },
-  {
-    id: '7',
-    content: '不当言论示例（已被拒绝）',
-    author: '某用户',
-    submittedAt: '2024-01-13T16:45:00Z',
-    reviewedAt: '2024-01-13T17:00:00Z',
-    status: 'rejected' as const,
-    topic: '上周话题：对学校活动的建议',
-    likes: 0,
-    reports: 3,
-    reviewer: '管理员A',
-    rejectReason: '内容不当，违反社区规范'
-  }
-]
-
-interface Message {
-  id: string
-  content: string
-  author: string
-  submittedAt: string
-  reviewedAt?: string
-  status: 'pending' | 'approved' | 'rejected'
-  topic: string
-  likes: number
-  reports: number
-  reviewer?: string
-  rejectReason?: string
+interface DashboardStats {
+  totalNews: number
+  totalTopics: number
+  pendingComments: number
+  totalEvents: number
+  totalUsers: number
+  recentActivity: number
 }
 
-function MessageCard({ message, onApprove, onReject, onView }: {
-  message: Message
-  onApprove?: (id: string) => void
-  onReject?: (id: string, reason: string) => void
-  onView: (message: Message) => void
-}) {
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
+function AdminDashboardContent() {
+  const { user } = useAuth()
+  const router = useRouter()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
 
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return { name: '待审核', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' }
-      case 'approved':
-        return { name: '已通过', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' }
-      case 'rejected':
-        return { name: '已拒绝', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }
-      default:
-        return { name: '未知', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300' }
-    }
-  }
-
-  const statusInfo = getStatusInfo(message.status)
-  const isUrgent = message.reports > 0
-
-  const handleReject = () => {
-    if (!rejectReason.trim()) {
-      toast.error('请填写拒绝原因')
-      return
-    }
-    onReject?.(message.id, rejectReason)
-    setRejectReason('')
-    setRejectDialogOpen(false)
-  }
-
-  return (
-    <Card className={`${isUrgent ? 'border-red-300 bg-red-50 dark:bg-red-950 dark:border-red-700' : ''}`}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Badge className={statusInfo.color}>
-              {statusInfo.name}
-            </Badge>
-            {isUrgent && (
-              <Badge variant="outline" className="text-red-600 border-red-600">
-                {message.reports} 举报
-              </Badge>
-            )}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {new Date(message.submittedAt).toLocaleString('zh-CN')}
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium">{message.author}</div>
-            <div className="text-sm text-muted-foreground">{message.topic}</div>
-          </div>
-        </div>
-      </CardHeader>
+  const loadDashboardStats = async () => {
+    try {
+      const supabase = createClient()
       
-      <CardContent>
-        <div className="space-y-4">
-          <p className="text-sm line-clamp-3">{message.content}</p>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{message.likes} 点赞</span>
-              <span>{message.reports} 举报</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => onView(message)}>
-                <Eye className="w-4 h-4 mr-1" />
-                查看
-              </Button>
-              
-              {message.status === 'pending' && onApprove && (
-                <Button size="sm" onClick={() => onApprove(message.id)}>
-                  <Check className="w-4 h-4 mr-1" />
-                  通过
-                </Button>
-              )}
-              
-              {message.status === 'pending' && onReject && (
-                <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                      <X className="w-4 h-4 mr-1" />
-                      拒绝
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>拒绝留言</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium">拒绝原因</label>
-                        <Textarea
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          placeholder="请说明拒绝的原因..."
-                          rows={3}
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-                          取消
-                        </Button>
-                        <Button variant="destructive" onClick={handleReject}>
-                          确认拒绝
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
-          </div>
-          
-          {message.status !== 'pending' && (
-            <div className="text-xs text-muted-foreground pt-2 border-t">
-              {message.status === 'approved' ? '通过' : '拒绝'}时间: {message.reviewedAt && new Date(message.reviewedAt).toLocaleString('zh-CN')}
-              {message.reviewer && ` • 审核人: ${message.reviewer}`}
-              {message.rejectReason && ` • 原因: ${message.rejectReason}`}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function MessageDetailDialog({ message, open, onOpenChange }: {
-  message: Message | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  if (!message) return null
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>留言详情</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="font-medium">作者:</span> {message.author}
-            </div>
-            <div>
-              <span className="font-medium">状态:</span> 
-              <Badge className="ml-2">
-                {message.status === 'pending' ? '待审核' : 
-                 message.status === 'approved' ? '已通过' : '已拒绝'}
-              </Badge>
-            </div>
-            <div>
-              <span className="font-medium">提交时间:</span> {new Date(message.submittedAt).toLocaleString('zh-CN')}
-            </div>
-            <div>
-              <span className="font-medium">话题:</span> {message.topic}
-            </div>
-          </div>
-          
-          <div>
-            <span className="font-medium">内容:</span>
-            <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              {message.content}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="font-medium">点赞数:</span> {message.likes}
-            </div>
-            <div>
-              <span className="font-medium">举报数:</span> {message.reports}
-            </div>
-          </div>
-          
-          {message.status !== 'pending' && (
-            <div className="text-sm">
-              <span className="font-medium">审核信息:</span>
-              <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                <div>审核时间: {message.reviewedAt && new Date(message.reviewedAt).toLocaleString('zh-CN')}</div>
-                {message.reviewer && <div>审核人: {message.reviewer}</div>}
-                {message.rejectReason && <div>拒绝原因: {message.rejectReason}</div>}
-              </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-export default function AdminPage() {
-  const [pendingMessages, setPendingMessages] = useState(mockPendingMessages)
-  const [reviewedMessages, setReviewedMessages] = useState(mockReviewedMessages)
-  const [activeTab, setActiveTab] = useState<'pending' | 'reviewed'>('pending')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
-
-  const handleApprove = (id: string) => {
-    const message = pendingMessages.find(m => m.id === id)
-    if (message) {
-      const approvedMessage = {
-        ...message,
-        status: 'approved' as const,
-        reviewedAt: new Date().toISOString(),
-        reviewer: '当前管理员'
-      }
-      setReviewedMessages([approvedMessage, ...reviewedMessages])
-      setPendingMessages(pendingMessages.filter(m => m.id !== id))
-      toast.success('留言已通过审核')
+      // 获取新闻统计
+      const { count: newsCount } = await supabase
+        .from('news')
+        .select('*', { count: 'exact', head: true })
+      
+      // 获取话题统计
+      const { count: topicsCount } = await supabase
+        .from('topics')
+        .select('*', { count: 'exact', head: true })
+      
+      // 获取待审核评论统计
+      const { count: pendingCommentsCount } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'PENDING')
+      
+      // 获取日历事件统计
+      const { count: eventsCount } = await supabase
+        .from('calendar_events')
+        .select('*', { count: 'exact', head: true })
+      
+      // 获取用户统计
+      const { count: usersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+      
+      setStats({
+        totalNews: newsCount || 0,
+        totalTopics: topicsCount || 0,
+        pendingComments: pendingCommentsCount || 0,
+        totalEvents: eventsCount || 0,
+        totalUsers: usersCount || 0,
+        recentActivity: 0
+      })
+    } catch (error) {
+      console.error('加载统计数据失败:', error)
     }
   }
+  
+  useEffect(() => {
+    loadDashboardStats()
+  }, [])
 
-  const handleReject = (id: string, reason: string) => {
-    const message = pendingMessages.find(m => m.id === id)
-    if (message) {
-      const rejectedMessage = {
-        ...message,
-        status: 'rejected' as const,
-        reviewedAt: new Date().toISOString(),
-        reviewer: '当前管理员',
-        rejectReason: reason
-      }
-      setReviewedMessages([rejectedMessage, ...reviewedMessages])
-      setPendingMessages(pendingMessages.filter(m => m.id !== id))
-      toast.success('留言已拒绝')
-    }
-  }
 
-  const handleViewMessage = (message: Message) => {
-    setSelectedMessage(message)
-    setDetailDialogOpen(true)
-  }
-
-  const filteredReviewedMessages = reviewedMessages.filter(message => {
-    const matchesSearch = message.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         message.author.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || message.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
-
-  const filteredPendingMessages = pendingMessages.filter(message => {
-    return message.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           message.author.toLowerCase().includes(searchQuery.toLowerCase())
-  })
-
-  const urgentMessages = pendingMessages.filter(m => m.reports > 0)
-  const totalPending = pendingMessages.length
-  const totalApproved = reviewedMessages.filter(m => m.status === 'approved').length
-  const totalRejected = reviewedMessages.filter(m => m.status === 'rejected').length
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto p-6 space-y-6">
       {/* 页面标题 */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
-          <Shield className="w-8 h-8 text-blue-500" />
-          后台管理系统
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          留言审核与内容管理
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">管理后台</h1>
+          <p className="text-muted-foreground">
+            欢迎回来，{user?.displayName || user?.email}
+          </p>
+        </div>
+        <Badge variant="secondary" className="text-sm">
+          {user?.role || 'ADMIN'}
+        </Badge>
       </div>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-yellow-500" />
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">{totalPending}</div>
-                <div className="text-sm text-muted-foreground">待审核</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-500" />
-              <div>
-                <div className="text-2xl font-bold text-green-600">{totalApproved}</div>
-                <div className="text-sm text-muted-foreground">已通过</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <X className="w-5 h-5 text-red-500" />
-              <div>
-                <div className="text-2xl font-bold text-red-600">{totalRejected}</div>
-                <div className="text-sm text-muted-foreground">已拒绝</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-orange-500" />
-              <div>
-                <div className="text-2xl font-bold text-orange-600">{urgentMessages.length}</div>
-                <div className="text-sm text-muted-foreground">紧急处理</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {stats && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">新闻文章</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalNews}</div>
+              <p className="text-xs text-muted-foreground">
+                <TrendingUp className="inline h-3 w-3 mr-1" />
+                +12% 本月
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* 标签页切换 */}
-      <div className="flex gap-2 mb-6">
-        <Button 
-          variant={activeTab === 'pending' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('pending')}
-        >
-          待审核 ({totalPending})
-        </Button>
-        <Button 
-          variant={activeTab === 'reviewed' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('reviewed')}
-        >
-          已审核 ({totalApproved + totalRejected})
-        </Button>
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">讨论话题</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalTopics}</div>
+              <p className="text-xs text-muted-foreground">
+                <TrendingUp className="inline h-3 w-3 mr-1" />
+                +8% 本月
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* 搜索和筛选 */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1">
-          <Input
-            placeholder="搜索留言内容或作者..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
-          />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">待审核评论</CardTitle>
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-500">{stats.pendingComments}</div>
+              <p className="text-xs text-muted-foreground">
+                <Clock className="inline h-3 w-3 mr-1" />
+                需要处理
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">日历事件</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalEvents}</div>
+              <p className="text-xs text-muted-foreground">
+                <CheckCircle className="inline h-3 w-3 mr-1" />
+                本月活动
+              </p>
+            </CardContent>
+          </Card>
         </div>
-        
-        {activeTab === 'reviewed' && (
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="状态" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
-              <SelectItem value="approved">已通过</SelectItem>
-              <SelectItem value="rejected">已拒绝</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+      )}
 
-      {/* 留言列表 */}
-      <div className="space-y-4">
-        {activeTab === 'pending' ? (
-          filteredPendingMessages.length > 0 ? (
-            filteredPendingMessages.map(message => (
-              <MessageCard
-                key={message.id}
-                message={message}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onView={handleViewMessage}
-              />
-            ))
-          ) : (
-            <Card className="p-12 text-center">
-              <div className="text-muted-foreground">
-                <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">暂无待审核留言</p>
-                <p>所有留言都已处理完毕</p>
+      {/* 快速操作 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>快速操作</CardTitle>
+          <CardDescription>
+            常用的管理功能快捷入口
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="content" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="content">内容管理</TabsTrigger>
+              <TabsTrigger value="moderation">审核队列</TabsTrigger>
+              <TabsTrigger value="calendar">日历管理</TabsTrigger>
+              <TabsTrigger value="users">用户管理</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="content" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/news')}
+                >
+                  <FileText className="h-6 w-6" />
+                  管理新闻
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/sharespeare')}
+                >
+                  <FileText className="h-6 w-6" />
+                  管理Sharespeare
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/topics')}
+                >
+                  <MessageSquare className="h-6 w-6" />
+                  管理话题
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/upload')}
+                >
+                  <FileText className="h-6 w-6" />
+                  文件上传
+                </Button>
               </div>
-            </Card>
-          )
-        ) : (
-          filteredReviewedMessages.length > 0 ? (
-            filteredReviewedMessages.map(message => (
-              <MessageCard
-                key={message.id}
-                message={message}
-                onView={handleViewMessage}
-              />
-            ))
-          ) : (
-            <Card className="p-12 text-center">
-              <div className="text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">暂无相关记录</p>
-                <p>试试调整搜索条件</p>
+            </TabsContent>
+            
+            <TabsContent value="moderation" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/review')}
+                >
+                  <Eye className="h-6 w-6 text-blue-500" />
+                  投稿审核
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/comments/moderate')}
+                >
+                  <AlertCircle className="h-6 w-6 text-orange-500" />
+                  评论审核队列
+                  {stats && stats.pendingComments > 0 && (
+                    <Badge variant="destructive" className="ml-2">
+                      {stats.pendingComments}
+                    </Badge>
+                  )}
+                </Button>
               </div>
-            </Card>
-          )
-        )}
-      </div>
-
-      {/* 留言详情对话框 */}
-      <MessageDetailDialog
-        message={selectedMessage}
-        open={detailDialogOpen}
-        onOpenChange={setDetailDialogOpen}
-      />
+            </TabsContent>
+            
+            <TabsContent value="calendar" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/calendar')}
+                >
+                  <Calendar className="h-6 w-6" />
+                  管理日历事件
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/calendar/new')}
+                >
+                  <Calendar className="h-6 w-6" />
+                  创建新事件
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="users" className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/users')}
+                >
+                  <Users className="h-6 w-6" />
+                  用户管理
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/audit-logs')}
+                >
+                  <FileText className="h-6 w-6" />
+                  审计日志
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
+  )
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminGuard>
+      <AdminDashboardContent />
+    </AdminGuard>
   )
 }
