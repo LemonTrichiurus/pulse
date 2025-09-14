@@ -85,8 +85,29 @@ export default function ProfilePage() {
         .from('media')
         .getPublicUrl(filePath)
 
-      setAvatarUrl(data.publicUrl)
-      toast.success('头像上传成功')
+      const newAvatarUrl = data.publicUrl
+      setAvatarUrl(newAvatarUrl)
+      
+      // 自动保存头像到数据库
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          display_name: displayName,
+          avatar_url: newAvatarUrl
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '保存头像失败')
+      }
+      
+      // 刷新用户信息
+      await refreshUser()
+      toast.success('头像上传并保存成功')
     } catch (error: any) {
       toast.error(error.message || '头像上传失败')
     } finally {
@@ -166,7 +187,7 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={avatarUrl} alt={displayName} />
+                    <AvatarImage src={avatarUrl ? `${avatarUrl}?t=${Date.now()}` : avatarUrl} alt={displayName} />
                     <AvatarFallback className="text-lg">
                       {displayName.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
                     </AvatarFallback>
@@ -226,11 +247,11 @@ export default function ProfilePage() {
                   <div className="flex items-center space-x-2">
                     <div className={`px-2 py-1 rounded text-xs font-medium ${
                       user.role === 'ADMIN' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                      user.role === 'MODERATOR' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                      user.role === 'MOD' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
                       'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                     }`}>
                       {user.role === 'ADMIN' ? '管理员' : 
-                       user.role === 'MODERATOR' ? '版主' : '用户'}
+                       user.role === 'MOD' ? '版主' : '用户'}
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">

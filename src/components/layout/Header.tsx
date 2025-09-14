@@ -118,7 +118,7 @@ export function Header() {
                     </Link>
                     
                     {/* Admin Links - only show for ADMIN and MOD users */}
-                    {user.role && ['ADMIN', 'MODERATOR'].includes(user.role) && (
+                    {user.role && ['ADMIN', 'MOD'].includes(user.role) && (
                       <>
                         <Link
                           href="/admin"
@@ -288,7 +288,7 @@ export function Header() {
                       </Link>
                       
                       {/* Admin Links for Mobile - only show for ADMIN and MOD users */}
-                      {user.role && ['ADMIN', 'MODERATOR'].includes(user.role) && (
+                      {user.role && ['ADMIN', 'MOD'].includes(user.role) && (
                         <>
                           <Link
                             href="/admin"

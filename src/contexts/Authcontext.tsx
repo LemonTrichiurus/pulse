@@ -8,7 +8,8 @@ interface AuthUser {
   id: string
   email: string
   displayName: string
-  role: 'ADMIN' | 'MODERATOR' | 'USER'
+  role: 'ADMIN' | 'MOD' | 'MEMBER'
+  avatarUrl?: string | null
 }
 
 interface AuthContextType {
@@ -44,7 +45,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, display_name, role')
+        .select('id, email, display_name, role, avatar_url')
         .eq('id', authUser.id)
         .single()
 
@@ -57,7 +58,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: data.id,
         email: data.email,
         displayName: data.display_name,
-        role: data.role
+        role: data.role,
+        avatarUrl: data.avatar_url
       }
     } catch (error) {
       console.error('获取用户详情时发生错误:', error)

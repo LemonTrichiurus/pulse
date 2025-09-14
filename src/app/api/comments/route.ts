@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/security'
 
 // 评论创建验证模式
@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
     const supabase = createSupabaseServer()
     const { searchParams } = new URL(request.url)
     
+    // 检查用户权限，如果是管理员或版主，使用管理员权限查询
+    const user = await getCurrentUser(request)
+    const isAdmin = user && ['ADMIN', 'MOD'].includes(user.role)
+    
     const queryParams = commentQuerySchema.parse({
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '20',
@@ -42,15 +46,27 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(queryParams.limit), 100) // 最大100条
     const offset = (page - 1) * limit
     
-    // 构建查询
-    let query = supabase
+    // 如果是管理员或版主，使用管理员客户端绕过RLS限制
+    const queryClient = isAdmin ? createSupabaseAdmin() : supabase
+    
+    // 构建查询 - 为管理界面提供更详细的信息
+    let query = queryClient
       .from('comments')
       .select(`
         *,
         author:profiles!comments_author_id_fkey(
           id,
           display_name,
-          avatar_url
+          avatar_url,
+          email
+        ),
+        topic:topics(
+          id,
+          title
+        ),
+        news:news(
+          id,
+          title
         ),
         parent:comments!comments_parent_id_fkey(
           id,

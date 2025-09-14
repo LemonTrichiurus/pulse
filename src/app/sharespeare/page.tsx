@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
 
 // 辅助函数
@@ -147,9 +148,12 @@ function ShareCard({ share }: { share: SharespeareItem }) {
           
           {/* 作者信息 */}
           <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-              {share.author?.display_name?.charAt(0) || 'U'}
-            </div>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={share.author?.avatar_url || undefined} alt={share.author?.display_name || '匿名用户'} />
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                {share.author?.display_name?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-sm">{share.author?.display_name || '匿名用户'}</span>

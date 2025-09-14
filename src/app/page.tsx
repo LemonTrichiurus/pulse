@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Newspaper, Users, Calendar, Star, MessageSquare, BookOpen, Clock, MapPin, Award } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import SchoolCalendar from '@/components/SchoolCalendar'
 
 // 定义与后端API返回一致的类型（仅取页面使用到的字段）
@@ -317,8 +318,16 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-2 mb-3">
                       <Badge variant="secondary">经验分享</Badge>
-                      {article.author?.display_name && (
-                        <Badge variant="outline">{article.author.display_name}</Badge>
+                      {article.author && (
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={article.author.avatar_url || undefined} alt={article.author.display_name} />
+                            <AvatarFallback className="text-xs">
+                              {article.author.display_name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Badge variant="outline">{article.author.display_name}</Badge>
+                        </div>
                       )}
                     </div>
                     <Button variant="outline" size="sm" asChild>

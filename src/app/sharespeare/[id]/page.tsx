@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Calendar, Heart, Share2, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'sonner'
 
 // 定义数据类型
@@ -155,9 +156,12 @@ export default function ShareDetailPage() {
               
               {/* 作者信息 */}
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-white" />
-                </div>
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={share.author?.avatar_url || undefined} alt={share.author?.display_name || '匿名用户'} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                    <GraduationCap className="w-6 h-6" />
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="font-semibold text-gray-900 dark:text-white">{share.author?.display_name || '匿名用户'}</h3>

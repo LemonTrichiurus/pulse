@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     // 如果因 top_rank 列不存在导致错误，则回退到不带 top_rank 的排序
     if (error && typeof error.message === 'string' && /column .*top_rank.* does not exist/i.test(error.message)) {
-      ({ data, error, count } = await applyOrdering(supabase
+      let fallbackQuery = supabase
         .from('news')
         .select(`
           *,
@@ -128,14 +128,18 @@ export async function GET(request: NextRequest) {
             tag:tags(name)
           )
         `, { count: 'exact' })
-        // 重新应用筛选条件
-        [
-          (q: any) => category ? q.eq('category', category) : q,
-          (q: any) => status ? q.eq('status', status) : q.eq('status', 'PUBLISHED'),
-          (q: any) => author_id ? q.eq('author_id', author_id) : q,
-          (q: any) => search ? q.or(`title.ilike.%${search}%,content.ilike.%${search}%`) : q
-        ].reduce((acc: any, fn: any) => fn(acc), supabase.from('news') as any),
-        false))
+      
+      // 重新应用筛选条件
+      const filters = [
+        (q: any) => category ? q.eq('category', category) : q,
+        (q: any) => status ? q.eq('status', status) : q.eq('status', 'PUBLISHED'),
+        (q: any) => author_id ? q.eq('author_id', author_id) : q,
+        (q: any) => search ? q.or(`title.ilike.%${search}%,content.ilike.%${search}%`) : q
+      ]
+      
+      fallbackQuery = filters.reduce((acc: any, fn: any) => fn(acc), fallbackQuery)
+      
+      ({ data, error, count } = await applyOrdering(fallbackQuery, false))
     }
 
     if (error) {

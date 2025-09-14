@@ -231,10 +231,9 @@ export default function NewsDetailPage() {
   }
 
   const handleSubmitComment = () => {
-    if (!user) {
-      toast.error('请先登录后再评论')
-      return
-    }
+    // 暂时禁用评论功能，因为没有用户认证
+    toast.error('评论功能暂时不可用')
+    return
     
     if (!newComment.trim()) {
       toast.error('评论内容不能为空')
@@ -245,8 +244,8 @@ export default function NewsDetailPage() {
       id: Date.now().toString(),
       content: newComment,
       author: {
-        id: user.id,
-        name: '我',
+        id: 'temp-user',
+        name: '匿名用户',
         avatar: '/images/default-avatar.jpg',
         role: 'member' as const
       },
@@ -308,10 +307,7 @@ export default function NewsDetailPage() {
                 <Calendar className="w-4 h-4" />
                 <span>{formatDate(news.published_at)}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Eye className="w-4 h-4" />
-                <span>{news.view_count} 阅读</span>
-              </div>
+              {/* 阅读数量已隐藏 */}
             </div>
             
             {/* 操作按钮 */}
@@ -364,88 +360,9 @@ export default function NewsDetailPage() {
         />
       </article>
 
-      {/* 评论区 */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-6">
-          <MessageCircle className="w-5 h-5" />
-          <h2 className="text-xl font-semibold">评论 ({comments.length})</h2>
-        </div>
+      {/* 评论区已隐藏 */}
 
-        {/* 发表评论 */}
-        {user ? (
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <Textarea
-                placeholder="写下你的想法..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="mb-4"
-                rows={3}
-              />
-              <div className="flex justify-end">
-                <Button onClick={handleSubmitComment}>
-                  发表评论
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="mb-6">
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground mb-4">登录后即可参与评论讨论</p>
-              <Button>登录</Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 评论列表 */}
-        <Card>
-          <CardContent className="pt-6">
-            {comments.length > 0 ? (
-              <div className="space-y-4">
-                {comments.map(comment => (
-                  <CommentItem key={comment.id} comment={comment} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                暂无评论，快来发表第一条评论吧！
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* 相关推荐 */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">相关推荐</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {relatedNews.map(item => (
-            <Card key={item.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-4">
-                <Link href={`/news/${item.id}`}>
-                  <h3 className="font-medium mb-2 hover:text-blue-600 transition-colors">
-                    {item.title}
-                  </h3>
-                </Link>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                  {item.excerpt}
-                </p>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(item.published_at).toLocaleDateString('zh-CN')}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    {item.view_count}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {/* 相关推荐已隐藏 */}
     </div>
   )
 }

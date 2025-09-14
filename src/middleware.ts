@@ -28,7 +28,7 @@ const RATE_LIMIT_CONFIG = {
 function checkRoutePermission(pathname: string, userRole?: string): boolean {
   // 管理后台路由权限
   if (pathname.startsWith('/admin')) {
-    return userRole === 'ADMIN' || userRole === 'MODERATOR'
+    return userRole === 'ADMIN' || userRole === 'MOD'
   }
   
   // API 路由权限检查
@@ -60,7 +60,7 @@ function checkRoutePermission(pathname: string, userRole?: string): boolean {
     // 检查管理员权限
     for (const route of adminRequiredRoutes) {
       if (pathname.startsWith(route)) {
-        return userRole === 'ADMIN' || userRole === 'MODERATOR'
+        return userRole === 'ADMIN' || userRole === 'MOD'
       }
     }
     
@@ -166,7 +166,7 @@ export async function middleware(request: NextRequest) {
           .eq('id', user.id)
           .single()
         
-        if (!profile || (profile.role !== 'ADMIN' && profile.role !== 'MODERATOR')) {
+        if (!profile || (profile.role !== 'ADMIN' && profile.role !== 'MOD')) {
           return NextResponse.redirect(new URL('/', request.url))
         }
       } catch (error) {
