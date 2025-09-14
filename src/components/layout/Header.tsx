@@ -103,47 +103,65 @@ export function Header() {
                       我的投稿
                     </Link>
                     
-                    {/* Admin Links - only show for logged in users */}
+                    {/* Profile Link */}
                     <Link
-                      href="/admin"
+                      href="/profile"
                       className={cn(
                         "hidden md:flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                        pathname === '/admin'
+                        pathname === '/profile'
                           ? "bg-accent text-accent-foreground"
                           : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                       )}
                     >
-                      <Shield className="w-4 h-4" />
-                      管理
+                      <User className="w-4 h-4" />
+                      个人资料
                     </Link>
                     
-                    {/* Topic Management Link */}
-                    <Link
-                      href="/admin/topics"
-                      className={cn(
-                        "hidden md:flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                        pathname === '/admin/topics'
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                      )}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      话题管理
-                    </Link>
-                    
-                    {/* Comment Moderation Link */}
-                    <Link
-                      href="/admin/comments"
-                      className={cn(
-                        "hidden md:flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                        pathname === '/admin/comments'
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                      )}
-                    >
-                      <Users className="w-4 h-4" />
-                      评论审核
-                    </Link>
+                    {/* Admin Links - only show for ADMIN and MOD users */}
+                    {user.role && ['ADMIN', 'MODERATOR'].includes(user.role) && (
+                      <>
+                        <Link
+                          href="/admin"
+                          className={cn(
+                            "hidden md:flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                            pathname === '/admin'
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                          )}
+                        >
+                          <Shield className="w-4 h-4" />
+                          管理
+                        </Link>
+                        
+                        {/* Topic Management Link */}
+                        <Link
+                          href="/admin/topics"
+                          className={cn(
+                            "hidden md:flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                            pathname === '/admin/topics'
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                          )}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          话题管理
+                        </Link>
+                        
+                        {/* Comment Moderation Link */}
+                        <Link
+                          href="/admin/comments"
+                          className={cn(
+                            "hidden md:flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                            pathname === '/admin/comments'
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                          )}
+                        >
+                          <Users className="w-4 h-4" />
+                          评论审核
+                        </Link>
+                      </>
+                    )}
                     
                     {/* Sign Out Button */}
                     <Button
@@ -254,50 +272,69 @@ export function Header() {
                         我的投稿
                       </Link>
                       
-                      {/* Admin Links for Mobile */}
+                      {/* Profile Link for Mobile */}
                       <Link
-                        href="/admin"
+                        href="/profile"
                         className={cn(
                           "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                          pathname === '/admin'
+                          pathname === '/profile'
                             ? "bg-accent text-accent-foreground"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                         )}
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <Shield className="w-4 h-4" />
-                        管理
+                        <User className="w-4 h-4" />
+                        个人资料
                       </Link>
                       
-                      {/* Topic Management Link for Mobile */}
-                      <Link
-                        href="/admin/topics"
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                          pathname === '/admin/topics'
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                        )}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        话题管理
-                      </Link>
-                      
-                      {/* Comment Moderation Link for Mobile */}
-                      <Link
-                        href="/admin/comments"
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                          pathname === '/admin/comments'
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                        )}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <Users className="w-4 h-4" />
-                        评论审核
-                      </Link>
+                      {/* Admin Links for Mobile - only show for ADMIN and MOD users */}
+                      {user.role && ['ADMIN', 'MODERATOR'].includes(user.role) && (
+                        <>
+                          <Link
+                            href="/admin"
+                            className={cn(
+                              "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                              pathname === '/admin'
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            )}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <Shield className="w-4 h-4" />
+                            管理
+                          </Link>
+                          
+                          {/* Topic Management Link for Mobile */}
+                          <Link
+                            href="/admin/topics"
+                            className={cn(
+                              "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                              pathname === '/admin/topics'
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            )}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            话题管理
+                          </Link>
+                          
+                          {/* Comment Moderation Link for Mobile */}
+                          <Link
+                            href="/admin/comments"
+                            className={cn(
+                              "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                              pathname === '/admin/comments'
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            )}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <Users className="w-4 h-4" />
+                            评论审核
+                          </Link>
+                        </>
+                      )}
                       
                       {/* Sign Out for Mobile */}
                       <button

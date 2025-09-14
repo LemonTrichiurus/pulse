@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 
 export async function createSupabaseServer() {
   const cookieStore = await cookies()
@@ -17,6 +18,20 @@ export async function createSupabaseServer() {
           })
         },
       },
+    }
+  )
+}
+
+// 管理员客户端，使用服务密钥绕过RLS
+export function createSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     }
   )
 }

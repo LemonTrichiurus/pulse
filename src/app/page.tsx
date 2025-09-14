@@ -115,14 +115,12 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
-                <Users className="w-5 h-5 mr-2" />
-                加入新闻社
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-gray-900">
-                <BookOpen className="w-5 h-5 mr-2" />
-                立即投稿
+            <div className="flex justify-center">
+              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100" asChild>
+                <Link href="/join">
+                  <Users className="w-5 h-5 mr-2" />
+                  加入新闻社
+                </Link>
               </Button>
             </div>
           </div>
@@ -373,9 +371,9 @@ export default function Home() {
               <Card className="text-center hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold">
-                    李
+                    朱
                   </div>
-                  <CardTitle className="text-lg">李明</CardTitle>
+                  <CardTitle className="text-lg">朱嘉旎</CardTitle>
                   <CardDescription>社长</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -388,9 +386,9 @@ export default function Home() {
               <Card className="text-center hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold">
-                    王
+                    张
                   </div>
-                  <CardTitle className="text-lg">王小雨</CardTitle>
+                  <CardTitle className="text-lg">张皓川</CardTitle>
                   <CardDescription>副社长</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -403,14 +401,14 @@ export default function Home() {
               <Card className="text-center hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold">
-                    张
+                    林
                   </div>
-                  <CardTitle className="text-lg">张思远</CardTitle>
-                  <CardDescription>编辑部部长</CardDescription>
+                  <CardTitle className="text-lg">林雅琪</CardTitle>
+                  <CardDescription>美编</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    负责文章编辑和内容质量把控
+                    负责视觉设计和美术编辑工作
                   </p>
                 </CardContent>
               </Card>
@@ -418,14 +416,14 @@ export default function Home() {
               <Card className="text-center hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold">
-                    陈
+                    李
                   </div>
-                  <CardTitle className="text-lg">陈佳音</CardTitle>
-                  <CardDescription>宣传部部长</CardDescription>
+                  <CardTitle className="text-lg">李桐</CardTitle>
+                  <CardDescription>美编</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    负责社团宣传和活动策划
+                    负责图片处理和版面设计工作
                   </p>
                 </CardContent>
               </Card>

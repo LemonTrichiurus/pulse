@@ -14,10 +14,17 @@ interface Comment {
   body_rich: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   created_at: string
+  moderated_by?: string
+  moderated_at?: string
+  reason?: string
   profiles: {
     id: string
     display_name: string
     role: string
+  }
+  moderator?: {
+    id: string
+    display_name: string
   }
 }
 
@@ -149,7 +156,7 @@ export default function CommentList({ comments, currentUserId, isModerator }: Co
                     </div>
                     <div className="flex items-center space-x-2">
                       {/* 状态 Badge */}
-                      {(comment.status !== 'APPROVED' || isModerator) && getStatusBadge(comment.status)}
+                      {comment.status !== 'APPROVED' && getStatusBadge(comment.status)}
                       
                       {/* 审核按钮 */}
                       {isModerator && comment.status === 'PENDING' && (
@@ -197,6 +204,36 @@ export default function CommentList({ comments, currentUserId, isModerator }: Co
                       <p className="text-sm text-red-800">
                         <XCircle className="h-4 w-4 inline mr-1" />
                         您的评论未通过审核，请检查内容是否符合社区规范。
+                      </p>
+                      {comment.reason && (
+                        <p className="text-sm text-red-700 mt-1">
+                          拒绝原因：{comment.reason}
+                        </p>
+                      )}
+                      {comment.moderator && comment.moderated_at && (
+                        <p className="text-xs text-red-600 mt-2">
+                          审核者：{comment.moderator.display_name} • {formatDistanceToNow(new Date(comment.moderated_at), {
+                            addSuffix: true,
+                            locale: zhCN
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* 显示审核信息（对于已审核的评论） */}
+                  {comment.status !== 'PENDING' && comment.moderator && comment.moderated_at && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-xs text-gray-500">
+                        {comment.status === 'APPROVED' ? '审核通过' : '审核拒绝'} • 
+                        审核者：{comment.moderator.display_name} • 
+                        {formatDistanceToNow(new Date(comment.moderated_at), {
+                          addSuffix: true,
+                          locale: zhCN
+                        })}
+                        {comment.reason && comment.status === 'REJECTED' && (
+                          <span> • 原因：{comment.reason}</span>
+                        )}
                       </p>
                     </div>
                   )}

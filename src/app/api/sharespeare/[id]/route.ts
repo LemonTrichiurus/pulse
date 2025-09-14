@@ -13,8 +13,8 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const supabase = createSupabaseServer()
-    const { id } = params
+    const supabase = await createSupabaseServer()
+    const { id } = (await params)
     
     if (!id) {
       return NextResponse.json(

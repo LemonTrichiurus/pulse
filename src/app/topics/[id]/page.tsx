@@ -68,10 +68,17 @@ export default async function TopicDetailPage({ params }: TopicDetailPageProps) 
         body_rich,
         status,
         created_at,
+        moderated_by,
+        moderated_at,
+        reason,
         profiles!comments_author_id_fkey (
           id,
           display_name,
           role
+        ),
+        moderator:profiles!comments_moderated_by_fkey (
+          id,
+          display_name
         )
       `)
       .eq('topic_id', id)
@@ -85,10 +92,17 @@ export default async function TopicDetailPage({ params }: TopicDetailPageProps) 
         body_rich,
         status,
         created_at,
+        moderated_by,
+        moderated_at,
+        reason,
         profiles!comments_author_id_fkey (
           id,
           display_name,
           role
+        ),
+        moderator:profiles!comments_moderated_by_fkey (
+          id,
+          display_name
         )
       `)
       .eq('topic_id', id)
@@ -112,10 +126,17 @@ export default async function TopicDetailPage({ params }: TopicDetailPageProps) 
         body_rich,
         status,
         created_at,
+        moderated_by,
+        moderated_at,
+        reason,
         profiles!comments_author_id_fkey (
           id,
           display_name,
           role
+        ),
+        moderator:profiles!comments_moderated_by_fkey (
+          id,
+          display_name
         )
       `)
       .eq('topic_id', id)

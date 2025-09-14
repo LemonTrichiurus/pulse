@@ -34,7 +34,7 @@ export default function CommentForm({ topicId }: CommentFormProps) {
     try {
       const formData = new FormData()
       formData.append('topicId', topicId)
-      formData.append('content', content.trim())
+      formData.append('body_rich', content.trim())
       
       await postComment(formData)
       setContent('')
