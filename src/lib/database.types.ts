@@ -79,6 +79,7 @@ export interface Database {
           title: string
           content_rich: string
           media_url: string | null
+          media_urls: string[] | null
           author_id: string
           published_at: string | null
           status: 'DRAFT' | 'PUBLISHED'
@@ -90,6 +91,7 @@ export interface Database {
           title: string
           content_rich: string
           media_url?: string | null
+          media_urls?: string[] | null
           author_id: string
           published_at?: string | null
           status?: 'DRAFT' | 'PUBLISHED'
@@ -101,9 +103,33 @@ export interface Database {
           title?: string
           content_rich?: string
           media_url?: string | null
+          media_urls?: string[] | null
           author_id?: string
           published_at?: string | null
           status?: 'DRAFT' | 'PUBLISHED'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      homepage_config: {
+        Row: {
+          id: string
+          config_key: string
+          config_value: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          config_key: string
+          config_value?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          config_key?: string
+          config_value?: string | null
           created_at?: string
           updated_at?: string
         }

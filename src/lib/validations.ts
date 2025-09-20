@@ -34,6 +34,7 @@ export const createSharespeareSchema = z.object({
   title: z.string().min(1, '请输入标题').max(200, '标题不能超过200个字符'),
   content_rich: z.string().min(1, '请输入内容'),
   media_url: z.string().url('请输入有效的媒体URL').optional(),
+  media_urls: z.array(z.string().url('请输入有效的媒体URL')).max(10, '最多只能上传10张图片').optional(),
   status: newsStatusSchema.optional().default('DRAFT'),
   published_at: z.string().datetime().optional()
 })

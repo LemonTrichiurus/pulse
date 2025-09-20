@@ -26,6 +26,7 @@ interface SharespeareItem {
   title: string
   content_rich: string
   media_url: string | null
+  media_urls: string[] | null
   author_id: string
   published_at: string | null
   status: 'DRAFT' | 'PUBLISHED'
@@ -145,6 +146,51 @@ function ShareCard({ share }: { share: SharespeareItem }) {
             className="text-muted-foreground mb-4 line-clamp-3"
             dangerouslySetInnerHTML={{ __html: share.content_rich.substring(0, 200) + '...' }}
           />
+          
+          {/* 媒体预览 */}
+          {(share.media_url || (share.media_urls && share.media_urls.length > 0)) && (
+            <div className="mb-4">
+              {/* 单张图片预览 */}
+              {share.media_url && !share.media_urls && (
+                <div className="relative overflow-hidden rounded-lg">
+                  <img
+                    src={share.media_url}
+                    alt="文章配图"
+                    className="w-full h-32 object-cover"
+                  />
+                </div>
+              )}
+              
+              {/* 多张图片预览 */}
+              {share.media_urls && share.media_urls.length > 0 && (
+                <div className="relative">
+                  <div className={`grid gap-1 ${
+                    share.media_urls.length === 1 ? 'grid-cols-1' :
+                    share.media_urls.length === 2 ? 'grid-cols-2' :
+                    'grid-cols-3'
+                  }`}>
+                    {share.media_urls.slice(0, 3).map((url, index) => (
+                      <div key={index} className="relative overflow-hidden rounded-lg">
+                        <img
+                          src={url}
+                          alt={`配图 ${index + 1}`}
+                          className="w-full h-20 object-cover"
+                        />
+                        {/* 如果有超过3张图片，在第3张图片上显示剩余数量 */}
+                        {index === 2 && share.media_urls && share.media_urls.length > 3 && (
+                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <span className="text-white text-sm font-medium">
+                              +{share.media_urls.length - 3}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           
           {/* 作者信息 */}
           <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">

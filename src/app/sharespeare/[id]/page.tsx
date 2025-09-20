@@ -14,6 +14,7 @@ interface ShareDetail {
   title: string
   content_rich: string
   media_url: string | null
+  media_urls: string[] | null
   author_id: string
   published_at: string | null
   status: 'DRAFT' | 'PUBLISHED'
@@ -185,6 +186,71 @@ export default function ShareDetailPage() {
                 className="prose prose-gray dark:prose-invert max-w-none leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: share.content_rich }}
               />
+
+              {/* 媒体内容 */}
+              {(share.media_url || (share.media_urls && share.media_urls.length > 0)) && (
+                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  {/* 单张图片显示 */}
+                  {share.media_url && !share.media_urls && (
+                    <div className="mb-4">
+                      <img
+                        src={share.media_url}
+                        alt="文章配图"
+                        className="w-full h-auto object-contain mx-auto rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
+                        onClick={() => {
+                          // 创建模态框显示大图
+                          const modal = document.createElement('div')
+                          modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'
+                          modal.onclick = () => modal.remove()
+                          
+                          const img = document.createElement('img')
+                          img.src = share.media_url!
+                          img.className = 'max-w-full max-h-full object-contain rounded-lg'
+                          img.onclick = (e) => e.stopPropagation()
+                          
+                          modal.appendChild(img)
+                          document.body.appendChild(modal)
+                        }}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* 多张图片显示 */}
+                  {share.media_urls && share.media_urls.length > 0 && (
+                    <div className="mb-4">
+                      <div className={`grid gap-4 ${
+                        share.media_urls.length === 1 ? 'grid-cols-1' :
+                        share.media_urls.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
+                        'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                      }`}>
+                        {share.media_urls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`文章配图 ${index + 1}`}
+                              className="w-full h-auto object-contain rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
+                              onClick={() => {
+                                // 创建模态框显示大图
+                                const modal = document.createElement('div')
+                                modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'
+                                modal.onclick = () => modal.remove()
+                                
+                                const img = document.createElement('img')
+                                img.src = url
+                                img.className = 'max-w-full max-h-full object-contain rounded-lg'
+                                img.onclick = (e) => e.stopPropagation()
+                                
+                                modal.appendChild(img)
+                                document.body.appendChild(modal)
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 

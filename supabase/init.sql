@@ -104,6 +104,20 @@ create table if not exists public.sharespeare (
     check (status <> 'PUBLISHED'::public.publish_status or published_at is not null)
 );
 
+-- 创建首页精选配置表
+create table if not exists public.homepage_config (
+  id bigserial primary key,
+  config_key text not null unique,
+  config_value text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 插入默认的精选Sharespeare配置
+insert into public.homepage_config (config_key, config_value)
+values ('featured_sharespeare_id', null)
+on conflict (config_key) do nothing;
+
 create table if not exists public.topics (
   id bigserial primary key,
   title text not null,

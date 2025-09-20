@@ -9,11 +9,12 @@ export function Footer() {
           {/* Logo and description */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Newspaper className="h-5 w-5" />
-              <span className="font-semibold">校园新闻社</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-serif italic">
+                Campus Pulse
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              连接校园，分享故事，传递声音。
+              Catch the beat of campus - 连接校园，分享故事，传递声音。
             </p>
           </div>
 

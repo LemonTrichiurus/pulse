@@ -7,7 +7,8 @@ import { getCurrentUser } from '@/lib/security'
 const sharespeareCreateSchema = z.object({
   title: z.string().min(1, '标题不能为空').max(200, '标题不能超过200字符'),
   content_rich: z.string().min(1, '内容不能为空'),
-  media_url: z.string().url().optional().nullable()
+  media_url: z.string().url().optional().nullable(),
+  media_urls: z.array(z.string().url()).max(10, '最多只能上传10张图片').optional()
 })
 
 // 查询参数验证模式

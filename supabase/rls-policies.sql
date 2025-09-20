@@ -13,6 +13,7 @@ alter table if exists public.calendar_events enable row level security;
 alter table if exists public.tags            enable row level security;
 alter table if exists public.news_tags       enable row level security;
 alter table if exists public.audit_logs      enable row level security;
+alter table if exists public.homepage_config enable row level security;
 
 -- -------- profiles --------
 do $$
@@ -92,6 +93,19 @@ begin
   if not exists (select 1 from pg_policies where schemaname='public' and tablename='sharespeare' and policyname='share_delete_admin') then
     create policy share_delete_admin on public.sharespeare
       for delete using (public.is_admin());
+  end if;
+end $$;
+
+-- -------- homepage_config --------
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='homepage_config' and policyname='homepage_config_select_all') then
+    create policy homepage_config_select_all on public.homepage_config for select using (true);
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='homepage_config' and policyname='homepage_config_write_mod') then
+    create policy homepage_config_write_mod on public.homepage_config
+      for all using (public.is_mod()) with check (public.is_mod());
   end if;
 end $$;
 

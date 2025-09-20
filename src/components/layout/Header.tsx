@@ -39,8 +39,9 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <Newspaper className="h-6 w-6" />
-            <span className="font-bold text-xl">校园新闻社</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-serif italic">
+              Campus Pulse
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

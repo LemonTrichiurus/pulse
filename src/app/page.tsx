@@ -32,6 +32,7 @@ type SharespeareItem = {
   title: string
   content_rich: string
   media_url: string | null
+  media_urls: string[] | null
   author_id: string
   published_at: string | null
   status: 'DRAFT' | 'PUBLISHED'
@@ -53,6 +54,7 @@ export default function Home() {
   const [featured, setFeatured] = useState<NewsItem | null>(null)
   const [latest, setLatest] = useState<NewsItem[]>([])
   const [sharespeare, setSharespeare] = useState<SharespeareItem[]>([])
+  const [featuredSharespeare, setFeaturedSharespeare] = useState<SharespeareItem | null>(null)
 
   useEffect(() => {
     // 获取头版新闻（精选）
@@ -80,6 +82,22 @@ export default function Home() {
         setSharespeare(json.data || [])
       })
       .catch(() => {})
+
+    // 获取首页精选Sharespeare文章
+    fetch('/api/homepage-config/featured-sharespeare')
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then((featuredData: SharespeareItem) => {
+        setFeaturedSharespeare(featuredData)
+      })
+      .catch(() => {
+        // 如果没有配置精选文章，则使用第一篇作为备选
+        fetch('/api/sharespeare?status=PUBLISHED&limit=1')
+          .then(res => res.ok ? res.json() : Promise.reject(res))
+          .then((json: SharespeareResponse) => {
+            setFeaturedSharespeare(json.data?.[0] || null)
+          })
+          .catch(() => {})
+      })
   }, [])
 
   const formatDate = (dateString?: string | null) => {
@@ -101,7 +119,7 @@ export default function Home() {
               校园脉搏
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-8">
-              Catch the Beat of Campus
+              Catch the Beat of Our Campus
             </p>
             <p className="text-lg text-gray-400 mb-12">
               凝聚・社区・互动 Cohesion, Community, Connection
@@ -109,20 +127,11 @@ export default function Home() {
             
             <div className="max-w-3xl mx-auto mb-12">
               <p className="text-lg text-gray-300 leading-relaxed mb-8">
-                校园脉搏是学生生活共享的校园平台，聚焦于新闻、活动与学生的声音，跟随我们的声音，一起感受校园的节奏与活力。
+                校园脉搏是学生生活共享的平台，聚焦于凝聚学生群体，为同学提供各类资源、提供发声平台
               </p>
               <p className="text-base text-gray-400 leading-relaxed">
-                Campus Pulse is the student media hub, spotlighting news, activities, and voices across campus. Join us, and feel the pulse of student life.
+                Campus Pulse is a platform for sharing student life, dedicated to fostering a sense of community, providing resources, and offering students a voice
               </p>
-            </div>
-            
-            <div className="flex justify-center">
-              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100" asChild>
-                <Link href="/join">
-                  <Users className="w-5 h-5 mr-2" />
-                  加入新闻社
-                </Link>
-              </Button>
             </div>
           </div>
         </div>
@@ -138,19 +147,28 @@ export default function Home() {
             <SchoolCalendar />
           </div>
 
-          {/* 右侧2/3 - 头版新闻 */}
+          {/* 右侧2/3 - 精品Sharespeare推荐 */}
           <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold mb-6">近期校园头版</h2>
+            <h2 className="text-2xl font-bold mb-6">精品Sharespeare推荐</h2>
             <Card className="hover:shadow-lg transition-shadow">
-              <div className="aspect-[16/9] bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg relative overflow-hidden">
+              <div className="aspect-[16/9] rounded-t-lg relative overflow-hidden">
+                {featuredSharespeare?.media_url ? (
+                  <img 
+                    src={featuredSharespeare.media_url} 
+                    alt={featuredSharespeare.title || '精品推荐'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-600"></div>
+                )}
                 <div className="absolute inset-0 bg-black/20"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <Badge className="mb-3 bg-red-600 hover:bg-red-700">头版新闻</Badge>
+                  <Badge className="mb-3 bg-purple-600 hover:bg-purple-700">精品推荐</Badge>
                   <h3 className="text-2xl md:text-3xl font-bold mb-2">
-                    {featured?.title || '学校成功举办第十届科技创新节'}
+                    {featuredSharespeare?.title || '高中生活的时间管理艺术'}
                   </h3>
                   <p className="text-lg opacity-90">
-                    {featured?.summary || '为期一周的科技创新节圆满落幕，展示了学生们的创新成果'}
+                    {featuredSharespeare?.summary || '分享我在高中三年中摸索出的高效学习与生活平衡之道'}
                   </p>
                 </div>
               </div>
@@ -158,27 +176,33 @@ export default function Home() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    <span>{formatDate(featured?.publish_at) || '2024年1月10日'}</span>
+                    <span>{formatDate(featuredSharespeare?.created_at) || '2024年1月8日'}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>学校体育馆</span>
-                  </div>
+                  {featuredSharespeare?.author && (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={featuredSharespeare.author.avatar_url || undefined} alt={featuredSharespeare.author.display_name} />
+                        <AvatarFallback className="text-xs">
+                          {featuredSharespeare.author.display_name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{featuredSharespeare.author.display_name}</span>
+                    </div>
+                  )}
                 </div>
                 <p className="text-muted-foreground mb-4 leading-relaxed">
-                  {/* 若有内容，截断显示一部分 */}
-                  {featured?.content ? `${featured.content.slice(0, 80)}...` : '本届科技创新节吸引了全校超过500名学生参与，共展出创新作品200余件。从人工智能到环保科技，从生物医学到新能源应用，学生们的创意和技术水平令人惊叹。活动期间还邀请了多位业界专家进行点评和指导...'}
+                  {featuredSharespeare?.content_rich ? `${featuredSharespeare.content_rich.replace(/<[^>]*>/g, '').slice(0, 120)}...` : '作为一名即将毕业的高三学生，我想分享一些在时间管理方面的心得体会。从高一的迷茫到现在的从容，这个过程中我学会了如何在学业压力和个人兴趣之间找到平衡点。希望我的经验能够帮助到学弟学妹们...'}
                 </p>
                 <div className="flex gap-3">
-                  {featured ? (
+                  {featuredSharespeare ? (
                     <Button asChild>
-                      <Link href={`/news/${featured.id}`}>阅读全文</Link>
+                      <Link href={`/sharespeare/${featuredSharespeare.id}`}>阅读全文</Link>
                     </Button>
                   ) : (
                     <Button disabled>阅读全文</Button>
                   )}
                   <Button variant="outline" asChild>
-                    <Link href="/news">查看更多头版新闻</Link>
+                    <Link href="/sharespeare">查看更多精选文章</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -187,7 +211,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 每周校园新闻 */}
+      {/* 每周校园新闻 - 暂时隐藏 */}
+      {/* 
       <section className="py-12">
         <h2 className="text-3xl font-bold text-center mb-12">本周校园新闻</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -283,6 +308,7 @@ export default function Home() {
           </Button>
         </div>
       </section>
+      */}
 
       {/* Sharespeare精选文章 */}
       <section className="py-12">
@@ -302,9 +328,39 @@ export default function Home() {
               ]
               return (
                 <Card key={article.id} className="hover:shadow-lg transition-shadow">
-                  <div className={`aspect-video bg-gradient-to-br ${gradients[index % 3]} rounded-t-lg flex items-center justify-center`}>
-                    <BookOpen className={`h-12 w-12 ${iconColors[index % 3]}`} />
-                  </div>
+                  {/* 媒体内容显示 */}
+                  {(article.media_url || (article.media_urls && article.media_urls.length > 0)) ? (
+                    <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                      {/* 单张图片显示 */}
+                      {article.media_url && !article.media_urls && (
+                        <img
+                          src={article.media_url}
+                          alt={article.title}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                      
+                      {/* 多张图片显示 */}
+                      {article.media_urls && article.media_urls.length > 0 && (
+                        <div className="w-full h-full relative">
+                          <img
+                            src={article.media_urls[0]}
+                            alt={article.title}
+                            className="w-full h-full object-cover"
+                          />
+                          {article.media_urls.length > 1 && (
+                            <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                              +{article.media_urls.length - 1}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={`aspect-video bg-gradient-to-br ${gradients[index % 3]} rounded-t-lg flex items-center justify-center`}>
+                      <BookOpen className={`h-12 w-12 ${iconColors[index % 3]}`} />
+                    </div>
+                  )}
                   <CardHeader>
                     <CardTitle className="text-lg line-clamp-2">{article.title}</CardTitle>
                     <CardDescription className="line-clamp-3">

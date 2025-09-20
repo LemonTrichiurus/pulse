@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  Eye
+  Eye,
+  Star
 } from 'lucide-react'
 import { AdminGuard } from '@/components/auth/AuthGuard'
 import { useAuth } from '@/contexts/Authcontext'
@@ -194,6 +195,14 @@ function AdminDashboardContent() {
                 >
                   <FileText className="h-6 w-6" />
                   管理Sharespeare
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-20 flex-col gap-2"
+                  onClick={() => router.push('/admin/featured-sharespeare')}
+                >
+                  <Star className="h-6 w-6" />
+                  管理精选Sharespeare
                 </Button>
                 <Button 
                   variant="outline" 

@@ -31,6 +31,7 @@ interface Sharespeare {
   title: string
   content_rich: string
   media_url?: string
+  media_urls?: string[]
   published_at?: string
   status: 'DRAFT' | 'PUBLISHED'
   profiles: {
@@ -161,7 +162,8 @@ function SharespeareManagementContent() {
   }
 
   const hasMedia = (item: Sharespeare) => {
-    return item.media_url && item.media_url.trim() !== ''
+    return (item.media_url && item.media_url.trim() !== '') || 
+           (item.media_urls && item.media_urls.length > 0)
   }
 
   if (loading) {
