@@ -4,8 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeProvider";
 import { AuthProvider } from "@/contexts/Authcontext";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { I18nProvider } from "@/contexts/I18nContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,14 +40,16 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-            </div>
-            <Toaster />
+            <I18nProvider>
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  {children}
+                </main>
+                {/* Footer removed as per request */}
+              </div>
+              <Toaster />
+            </I18nProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -80,7 +80,11 @@ export async function GET(request: NextRequest) {
     }
     
     return NextResponse.json({
-      data,
+      data: (data || []).map((item: any) => ({
+        ...item,
+        // 直接使用 sharespeare 表中的 tags 数组字段
+        tags: Array.isArray(item?.tags) ? item.tags : []
+      })),
       pagination: {
         page,
         limit,
@@ -170,16 +174,12 @@ export async function POST(request: NextRequest) {
       
       const tagIds = (await Promise.all(tagPromises)).filter(Boolean)
       
-      // 创建作品-标签关联
+      // 更新作品的标签字段
       if (tagIds.length > 0) {
         await supabase
-          .from('sharespeare_tags')
-          .insert(
-            tagIds.map(tagId => ({
-              sharespeare_id: sharespeare.id,
-              tag_id: tagId
-            }))
-          )
+          .from('sharespeare')
+          .update({ tags: tagIds })
+          .eq('id', sharespeare.id)
       }
     }
     

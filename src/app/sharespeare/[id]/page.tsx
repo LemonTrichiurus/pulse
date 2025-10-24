@@ -35,6 +35,8 @@ export default function ShareDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
+  const [imgAspect, setImgAspect] = useState<number | null>(null)
+  const [tileAspects, setTileAspects] = useState<Record<number, number>>({})
   
   // 格式化日期函数
   const formatDate = (dateString: string, prefix: string = '') => {
@@ -104,8 +106,8 @@ export default function ShareDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
+        <div className="w-full mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-8 max-w-[1400px]">
+          <div className="mx-auto">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
@@ -122,8 +124,8 @@ export default function ShareDetailPage() {
   if (error || !share) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto text-center">
+        <div className="w-full mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-8 max-w-[1400px]">
+          <div className="mx-auto text-center">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               {error || '文章不存在'}
             </h1>
@@ -139,8 +141,8 @@ export default function ShareDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="w-full mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-8 max-w-[1400px]">
+        <div className="mx-auto">
           {/* 返回按钮 */}
           <div className="mb-6">
             <Button onClick={() => router.back()} variant="ghost" className="gap-2">
@@ -193,25 +195,32 @@ export default function ShareDetailPage() {
                   {/* 单张图片显示 */}
                   {share.media_url && !share.media_urls && (
                     <div className="mb-4">
-                      <img
-                        src={share.media_url}
-                        alt="文章配图"
-                        className="w-full h-auto object-contain mx-auto rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
-                        onClick={() => {
-                          // 创建模态框显示大图
-                          const modal = document.createElement('div')
-                          modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'
-                          modal.onclick = () => modal.remove()
-                          
-                          const img = document.createElement('img')
-                          img.src = share.media_url!
-                          img.className = 'max-w-full max-h-full object-contain rounded-lg'
-                          img.onclick = (e) => e.stopPropagation()
-                          
-                          modal.appendChild(img)
-                          document.body.appendChild(modal)
-                        }}
-                      />
+                      <div className="w-full" style={{ aspectRatio: imgAspect ? `${imgAspect}` : '16/9' }}>
+                        <img
+                          src={share.media_url}
+                          alt="文章配图"
+                          className="w-full h-full object-contain mx-auto rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
+                          onLoad={(e) => {
+                            const img = e.currentTarget
+                            const aspect = img.naturalWidth / img.naturalHeight
+                            setImgAspect(aspect)
+                          }}
+                          onClick={() => {
+                            // 创建模态框显示大图
+                            const modal = document.createElement('div')
+                            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'
+                            modal.onclick = () => modal.remove()
+                            
+                            const img = document.createElement('img')
+                            img.src = share.media_url!
+                            img.className = 'max-w-full max-h-full object-contain rounded-lg'
+                            img.onclick = (e) => e.stopPropagation()
+                            
+                            modal.appendChild(img)
+                            document.body.appendChild(modal)
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                   
@@ -225,25 +234,32 @@ export default function ShareDetailPage() {
                       }`}>
                         {share.media_urls.map((url, index) => (
                           <div key={index} className="relative group">
-                            <img
-                              src={url}
-                              alt={`文章配图 ${index + 1}`}
-                              className="w-full h-auto object-contain rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
-                              onClick={() => {
-                                // 创建模态框显示大图
-                                const modal = document.createElement('div')
-                                modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'
-                                modal.onclick = () => modal.remove()
-                                
-                                const img = document.createElement('img')
-                                img.src = url
-                                img.className = 'max-w-full max-h-full object-contain rounded-lg'
-                                img.onclick = (e) => e.stopPropagation()
-                                
-                                modal.appendChild(img)
-                                document.body.appendChild(modal)
-                              }}
-                            />
+                            <div className="w-full" style={{ aspectRatio: tileAspects[index] ? `${tileAspects[index]}` : (share.media_urls!.length === 1 ? '16/9' : share.media_urls!.length === 2 ? '4/3' : '1/1') }}>
+                              <img
+                                src={url}
+                                alt={`文章配图 ${index + 1}`}
+                                className="w-full h-full object-contain rounded-lg shadow-md cursor-pointer transition-transform hover:scale-105"
+                                onLoad={(e) => {
+                                  const img = e.currentTarget
+                                  const aspect = img.naturalWidth / img.naturalHeight
+                                  setTileAspects(prev => ({ ...prev, [index]: aspect }))
+                                }}
+                                onClick={() => {
+                                  // 创建模态框显示大图
+                                  const modal = document.createElement('div')
+                                  modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'
+                                  modal.onclick = () => modal.remove()
+                                  
+                                  const img = document.createElement('img')
+                                  img.src = url
+                                  img.className = 'max-w-full max-h-full object-contain rounded-lg'
+                                  img.onclick = (e) => e.stopPropagation()
+                                  
+                                  modal.appendChild(img)
+                                  document.body.appendChild(modal)
+                                }}
+                              />
+                            </div>
                           </div>
                         ))}
                       </div>

@@ -9,11 +9,11 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/Authcontext'
 import { toast } from 'sonner'
+import { useI18n } from '@/contexts/I18nContext'
 
 const navigation = [
-  { name: '首页', href: '/' },
-  { name: '留言板', href: '/topics' },
-  { name: 'Sharespeare', href: '/sharespeare' },
+  { name: 'nav.sharespeare', href: '/sharespeare' },
+  { name: 'nav.topics', href: '/topics' },
 ]
 
 export function Header() {
@@ -21,15 +21,16 @@ export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, loading, signOut } = useAuth()
+  const { t, lang, setLang } = useI18n()
 
   const handleSignOut = async () => {
     try {
       await signOut()
-      toast.success('已退出登录')
+      toast.success(lang === 'zh' ? '已退出登录' : 'Signed out')
       router.push('/')
     } catch (error) {
       console.error('退出登录失败:', error)
-      toast.error('退出登录失败')
+      toast.error(lang === 'zh' ? '退出登录失败' : 'Failed to sign out')
     }
   }
 
@@ -39,8 +40,8 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-serif italic">
-              Campus Pulse
+            <span className="text-2xl font-bold font-serif italic text-muted-foreground">
+              Sharespeare
             </span>
           </Link>
 
@@ -57,13 +58,20 @@ export function Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
-                {item.name}
+                {t(item.name)}
               </Link>
             ))}
           </nav>
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
+            {/* Language toggle */}
+            <div className="hidden md:flex items-center">
+              <Button variant="outline" size="sm" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+                {lang === 'zh' ? 'EN' : '中文'}
+              </Button>
+            </div>
+
             {!loading && (
               <>
                 {user ? (
@@ -87,7 +95,7 @@ export function Header() {
                       )}
                     >
                       <PenTool className="w-4 h-4" />
-                      投稿
+                      {t('actions.submit')}
                     </Link>
                     
                     {/* My Submissions Link */}
@@ -101,7 +109,7 @@ export function Header() {
                       )}
                     >
                       <FileText className="w-4 h-4" />
-                      我的投稿
+                      {t('actions.my_submissions')}
                     </Link>
                     
                     {/* Profile Link */}
@@ -115,7 +123,7 @@ export function Header() {
                       )}
                     >
                       <User className="w-4 h-4" />
-                      个人资料
+                      {t('actions.profile')}
                     </Link>
                     
                     {/* Admin Links - only show for ADMIN and MOD users */}
@@ -131,7 +139,7 @@ export function Header() {
                           )}
                         >
                           <Shield className="w-4 h-4" />
-                          管理
+                          {t('admin.admin')}
                         </Link>
                         
                         {/* Topic Management Link */}
@@ -145,7 +153,7 @@ export function Header() {
                           )}
                         >
                           <MessageSquare className="w-4 h-4" />
-                          话题管理
+                          {t('admin.topics')}
                         </Link>
                         
                         {/* Comment Moderation Link */}
@@ -159,7 +167,7 @@ export function Header() {
                           )}
                         >
                           <Users className="w-4 h-4" />
-                          评论审核
+                          {t('admin.comments')}
                         </Link>
                       </>
                     )}
@@ -172,7 +180,7 @@ export function Header() {
                       className="hidden md:flex items-center gap-1"
                     >
                       <LogOut className="w-4 h-4" />
-                      退出
+                      {t('auth.sign_out')}
                     </Button>
                   </>
                 ) : (
@@ -185,7 +193,7 @@ export function Header() {
                   >
                     <Link href="/login">
                       <LogIn className="w-4 h-4" />
-                      登录
+                      {t('auth.sign_in')}
                     </Link>
                   </Button>
                 )}
@@ -226,9 +234,16 @@ export function Header() {
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {item.name}
+                  {t(item.name)}
                 </Link>
               ))}
+              
+              {/* Mobile Language toggle */}
+              <div className="px-3">
+                <Button variant="outline" size="sm" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="w-full">
+                  {lang === 'zh' ? 'EN' : '中文'}
+                </Button>
+              </div>
               
               {/* Mobile Auth Actions */}
               {!loading && (
@@ -255,7 +270,7 @@ export function Header() {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <PenTool className="w-4 h-4" />
-                        投稿
+                        {t('actions.submit')}
                       </Link>
                       
                       {/* My Submissions Link for Mobile */}
@@ -270,7 +285,7 @@ export function Header() {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <FileText className="w-4 h-4" />
-                        我的投稿
+                        {t('actions.my_submissions')}
                       </Link>
                       
                       {/* Profile Link for Mobile */}
@@ -285,7 +300,7 @@ export function Header() {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <User className="w-4 h-4" />
-                        个人资料
+                        {t('actions.profile')}
                       </Link>
                       
                       {/* Admin Links for Mobile - only show for ADMIN and MOD users */}
@@ -302,7 +317,7 @@ export function Header() {
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <Shield className="w-4 h-4" />
-                            管理
+                            {t('admin.admin')}
                           </Link>
                           
                           {/* Topic Management Link for Mobile */}
@@ -317,7 +332,7 @@ export function Header() {
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <MessageSquare className="w-4 h-4" />
-                            话题管理
+                            {t('admin.topics')}
                           </Link>
                           
                           {/* Comment Moderation Link for Mobile */}
@@ -332,7 +347,7 @@ export function Header() {
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <Users className="w-4 h-4" />
-                            评论审核
+                            {t('admin.comments')}
                           </Link>
                         </>
                       )}
@@ -346,7 +361,7 @@ export function Header() {
                         className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 w-full text-left"
                       >
                         <LogOut className="w-4 h-4" />
-                        退出
+                        {t('auth.sign_out')}
                       </button>
                     </>
                   ) : (
@@ -357,7 +372,7 @@ export function Header() {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <LogIn className="w-4 h-4" />
-                      登录
+                      {t('auth.sign_in')}
                     </Link>
                   )}
                 </>
