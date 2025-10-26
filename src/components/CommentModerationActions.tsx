@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { useI18n } from '@/contexts/I18nContext'
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
   const [rejectReason, setRejectReason] = useState('')
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
   const router = useRouter()
+  const { t } = useI18n()
 
   const handleApprove = async () => {
     setIsApproving(true)
@@ -49,7 +51,7 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.access_token) {
-        toast.error('登录状态已失效，请重新登录')
+        toast.error(t('moderation.login_expired'))
         return
       }
 
@@ -68,14 +70,14 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
       const result = await response.json()
 
       if (response.ok) {
-        toast.success(result.message || '评论已通过审核')
+        toast.success(result.message || t('moderation.comment_approved'))
         router.refresh()
       } else {
-        toast.error(result.error || '审核失败')
+        toast.error(result.error || t('moderation.operation_failed'))
       }
     } catch (error) {
       console.error('审核失败:', error)
-      toast.error('审核失败')
+      toast.error(t('moderation.operation_failed'))
     } finally {
       setIsApproving(false)
     }
@@ -89,7 +91,7 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.access_token) {
-        toast.error('登录状态已失效，请重新登录')
+        toast.error(t('moderation.login_expired'))
         return
       }
 
@@ -109,16 +111,16 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
       const result = await response.json()
 
       if (response.ok) {
-        toast.success(result.message || '评论已拒绝')
+        toast.success(result.message || t('moderation.comment_rejected'))
         setRejectReason('')
         setRejectDialogOpen(false)
         router.refresh()
       } else {
-        toast.error(result.error || '操作失败')
+        toast.error(result.error || t('moderation.operation_failed'))
       }
     } catch (error) {
       console.error('操作失败:', error)
-      toast.error('操作失败')
+      toast.error(t('moderation.operation_failed'))
     } finally {
       setIsRejecting(false)
     }
@@ -140,25 +142,25 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
             ) : (
               <>
                 <CheckCircle className="h-4 w-4 mr-1" />
-                通过
+                {t('moderation.approve')}
               </>
             )}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>通过评论</AlertDialogTitle>
+            <AlertDialogTitle>{t('moderation.approve_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要通过这条评论吗？通过后，评论将对所有用户可见。
+              {t('moderation.approve_description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('moderation.cancel')}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleApprove}
               className="bg-green-600 hover:bg-green-700"
             >
-              确认通过
+              {t('moderation.confirm_approve')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -178,26 +180,26 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
             ) : (
               <>
                 <XCircle className="h-4 w-4 mr-1" />
-                拒绝
+                {t('moderation.reject')}
               </>
             )}
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>拒绝评论</DialogTitle>
+            <DialogTitle>{t('moderation.reject_title')}</DialogTitle>
             <DialogDescription>
-              请说明拒绝这条评论的原因（可选）。拒绝后，评论将不会公开显示，但作者可以看到拒绝状态和原因。
+              {t('moderation.reject_description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reason">拒绝原因（可选）</Label>
+              <Label htmlFor="reason">{t('moderation.reject_reason_label')}</Label>
               <Textarea
                 id="reason"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="请输入拒绝原因，如：内容不当、违反社区规则等..."
+                placeholder={t('moderation.reject_reason_placeholder')}
                 rows={3}
                 maxLength={500}
               />
@@ -211,7 +213,7 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
                 setRejectDialogOpen(false)
               }}
             >
-              取消
+              {t('moderation.cancel')}
             </Button>
             <Button 
               onClick={handleReject}
@@ -221,10 +223,10 @@ export default function CommentModerationActions({ commentId, topicId }: Comment
               {isRejecting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  处理中...
+                  {t('moderation.processing')}
                 </>
               ) : (
-                '确认拒绝'
+                t('moderation.confirm_reject')
               )}
             </Button>
           </DialogFooter>

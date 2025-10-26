@@ -122,14 +122,7 @@ export default function LoginPage() {
                   立即注册
                 </Link>
               </p>
-              <div className="mt-4">
-                <p>测试账号：</p>
-                <div className="mt-2 space-y-1">
-                  <p><strong>管理员：</strong> admin@school.edu / admin123</p>
-                  <p><strong>版主：</strong> moderator@school.edu / mod123</p>
-                  <p><strong>学生：</strong> student1@school.edu / student123</p>
-                </div>
-              </div>
+
             </div>
           </CardContent>
         </Card>

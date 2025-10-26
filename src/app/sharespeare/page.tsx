@@ -9,13 +9,14 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
+import { useI18n } from '@/contexts/I18nContext'
 
 // 辅助函数
-function formatDate(dateString: string) {
+function formatDateByLang(dateString: string, lang: 'zh' | 'en') {
   const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
     year: 'numeric',
-    month: 'short',
+    month: lang === 'zh' ? 'short' : 'long',
     day: 'numeric'
   })
 }
@@ -48,34 +49,6 @@ interface ApiResponse {
     total: number
     totalPages: number
   }
-}
-
-// 动态分类数据，基于数据库内容生成
-function generateCategoriesFromShares(shares: SharespeareItem[]) {
-  const categories = [
-    {
-      id: 'summer_stories',
-      name: 'Summer Stories（夏校纪事）',
-      description: '分享世界各地夏校的申请过程、课程体验、社交经历～',
-      icon: '☀️',
-      articles: shares.slice(0, 3)
-    },
-    {
-      id: 'hidden_chapters',
-      name: 'Hidden Chapters（隐藏的章节）',
-      description: '生活中那些“未被讲述的故事”。',
-      icon: '📖',
-      articles: shares.slice(0, 3)
-    },
-    {
-      id: 'creative_sparks',
-      name: 'Creative Sparks（创意火花）',
-      description: '摄影配文、短篇、艺术作品展示区',
-      icon: '✨',
-      articles: shares.slice(0, 3)
-    }
-  ]
-  return categories.filter(category => category.articles.length > 0)
 }
 
 // 固定分类定义（基于数据库 tags）
@@ -120,6 +93,7 @@ interface FeaturedShare {
 }
 
 function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: SharespeareItem | FeaturedShare, size?: 'default' | 'large', tagsMap?: Record<number, string>, isFeatured?: boolean }) {
+  const { lang } = useI18n()
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [imgAspect, setImgAspect] = useState<number | null>(null)
@@ -132,17 +106,19 @@ function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: Sh
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-CN', {
-      month: 'long',
+    return new Date(dateString).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+      month: lang === 'zh' ? 'long' : 'long',
       day: 'numeric'
     })
   }
 
   // 根据 share.tags 匹配分类信息
-  const matchedCategory = CATEGORY_DEFS.find(c => (share.tags || []).includes(c.tagId))
+  const matchedCategory = CATEGORY_DEFS.find(c => (share as any).tags && (share as any).tags.includes(c.tagId))
   const categoryInfo = matchedCategory
-    ? { name: matchedCategory.name.split('（')[0], color: matchedCategory.color }
-    : { name: '分享', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' }
+    ? { name: lang === 'zh' ? matchedCategory.name : matchedCategory.name.split('（')[0], color: matchedCategory.color }
+    : { name: lang === 'zh' ? '分享' : 'Share', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' }
+
+  const isHtmlExcerpt = /<[^>]+>/.test(share.content_rich)
 
   return (
     <Link href={`/sharespeare/${share.id}`}>
@@ -153,19 +129,19 @@ function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: Sh
               <Badge className={categoryInfo.color}>
                 {categoryInfo.name}
               </Badge>
-              {share.published_at && (
+              {(share as any).published_at && (
                 <Badge variant="outline" className="text-green-600 border-green-600">
-                  已发布
+                  {lang === 'zh' ? '已发布' : 'Published'}
                 </Badge>
               )}
               {isFeatured && (
                 <Badge variant="outline" className="text-yellow-600 border-yellow-600 flex items-center gap-1">
-                  <Star className="w-3 h-3" /> 精选
+                  <Star className="w-3 h-3" /> {lang === 'zh' ? '精选' : 'Featured'}
                 </Badge>
               )}
             </div>
             <span className="text-sm text-muted-foreground">
-              {formatDate(share.created_at)}
+              {formatDate((share as any).created_at)}
             </span>
           </div>
           
@@ -175,10 +151,16 @@ function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: Sh
         </CardHeader>
         
         <CardContent>
-          <div 
-            className="text-muted-foreground mb-4 line-clamp-3"
-            dangerouslySetInnerHTML={{ __html: share.content_rich.substring(0, 200) + '...' }}
-          />
+          {isHtmlExcerpt ? (
+            <div 
+              className="text-muted-foreground mb-4 line-clamp-3"
+              dangerouslySetInnerHTML={{ __html: share.content_rich.substring(0, 200) + '...' }}
+            />
+          ) : (
+            <div className="text-muted-foreground mb-4 line-clamp-3 whitespace-pre-line">
+              {share.content_rich.substring(0, 200) + (share.content_rich.length > 200 ? '...' : '')}
+            </div>
+          )}
           
           {(share.media_url || (share.media_urls && share.media_urls.length > 0)) && (
             <div className="mb-4">
@@ -187,7 +169,7 @@ function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: Sh
                 <div className="w-full" style={{ aspectRatio: imgAspect ? `${imgAspect}` : (size === 'large' ? '16/9' : '4/3') }}>
                   <img
                     src={share.media_url}
-                    alt="文章配图"
+                    alt={lang === 'zh' ? '文章配图' : 'Article image'}
                     className="w-full h-full object-cover"
                     onLoad={(e) => {
                       const iw = (e.currentTarget as HTMLImageElement).naturalWidth
@@ -211,7 +193,7 @@ function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: Sh
                         <div className="w-full" style={{ aspectRatio: tileAspects[index] ? `${tileAspects[index]}` : (share.media_urls!.length === 1 ? '16/9' : share.media_urls!.length === 2 ? '4/3' : '1/1') }}>
                           <img
                             src={url}
-                            alt={`配图 ${index + 1}`}
+                            alt={`image ${index + 1}`}
                             className="w-full h-full object-cover"
                             onLoad={(e) => {
                               const iw = (e.currentTarget as HTMLImageElement).naturalWidth
@@ -237,40 +219,31 @@ function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: Sh
           
           <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={share.author?.avatar_url || undefined} alt={share.author?.display_name || '匿名用户'} />
+              <AvatarImage src={share.author?.avatar_url || undefined} alt={share.author?.display_name || (lang === 'zh' ? '匿名用户' : 'Anonymous')} />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
                 {share.author?.display_name?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">{share.author?.display_name || '匿名用户'}</span>
+                <span className="font-medium text-sm">{share.author?.display_name || (lang === 'zh' ? '匿名用户' : 'Anonymous')}</span>
                 <Badge variant="outline" className="text-xs">
-                  作者
+                  {lang === 'zh' ? '作者' : 'Author'}
                 </Badge>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {formatDate(share.created_at)}
-              </div>
+              <div className="text-xs text-muted-foreground">{lang === 'zh' ? '创作于 ' : 'Created on '}{formatDateByLang(share.created_at, lang)}</div>
             </div>
-          </div>
-          
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                {formatDate(share.created_at)}
-              </span>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={(e) => handleLike(e)} className="gap-1">
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} /> {likeCount}
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1">
+                <MessageCircle className="w-4 h-4" /> 0
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1">
+                <Eye className="w-4 h-4" /> 0
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              className={`h-7 px-2 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
-            >
-              <Heart className={`w-4 h-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-              {likeCount}
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -279,6 +252,7 @@ function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: Sh
 }
 
 export default function SharespearePage() {
+  const { lang } = useI18n()
   const [shares, setShares] = useState<SharespeareItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -299,7 +273,7 @@ export default function SharespearePage() {
         setLoading(true)
         // 获取 Sharespeare 列表
         const respShares = await fetch('/api/sharespeare?status=PUBLISHED&limit=50')
-        if (!respShares.ok) throw new Error('获取分享数据失败')
+        if (!respShares.ok) throw new Error(lang === 'zh' ? '获取分享数据失败' : 'Failed to fetch shares')
         const sharesJson: ApiResponse = await respShares.json()
         setShares(sharesJson.data)
         // 获取全部标签
@@ -327,13 +301,13 @@ export default function SharespearePage() {
           setFeaturedShare(null)
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : '获取数据失败')
+        setError(err instanceof Error ? err.message : (lang === 'zh' ? '获取数据失败' : 'Failed to fetch data'))
       } finally {
         setLoading(false)
       }
     }
     fetchAll()
-  }, [])
+  }, [lang])
 
   // 筛选和排序逻辑
   const filteredAndSortedShares = shares
@@ -356,9 +330,6 @@ export default function SharespearePage() {
       }
     })
 
-  const featuredShares = shares.slice(0, 3)
-  // 分类板块已移除，dynamicCategories 不再使用
-
   return (
     <>
       {/* 黑底 Hero */}
@@ -373,7 +344,7 @@ export default function SharespearePage() {
       {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin" />
-          <span className="ml-2">加载中...</span>
+          <span className="ml-2">{lang === 'zh' ? '加载中...' : 'Loading...'}</span>
         </div>
       )}
 
@@ -382,11 +353,11 @@ export default function SharespearePage() {
         <div className="container mx-auto px-4 py-8">
           <Card className="p-8 text-center">
             <div className="text-red-500 mb-4">
-              <p className="text-lg font-medium">加载失败</p>
+              <p className="text-lg font-medium">{lang === 'zh' ? '加载失败' : 'Load failed'}</p>
               <p className="text-sm">{error}</p>
             </div>
             <Button onClick={() => window.location.reload()}>
-              重新加载
+              {lang === 'zh' ? '重新加载' : 'Reload'}
             </Button>
           </Card>
         </div>
@@ -395,27 +366,25 @@ export default function SharespearePage() {
       {/* 主体内容 */}
       {!loading && !error && (
         <div className="w-full mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-8 max-w-[1400px]">
-          {/* 顶部精选（单篇）已移除，改为卡片内展示星标 */}
-
           {/* 搜索与排序 */}
           <div className="flex flex-col md:flex-row gap-4 mb-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input placeholder="搜索分享内容、标签..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+                <Input placeholder={lang === 'zh' ? '搜索分享内容、标签...' : 'Search shares, tags...'} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
             </div>
             <div className="flex gap-2">
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="latest">最新发布</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="latest">{lang === 'zh' ? '最新发布' : 'Latest'}</SelectItem></SelectContent>
               </Select>
             </div>
           </div>
 
           {/* 标签 Chips：全部 + 数据库标签 */}
           <div className="flex flex-wrap gap-2 mb-8">
-            <Button variant={selectedTagId === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedTagId('all')}>全部</Button>
+            <Button variant={selectedTagId === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedTagId('all')}>{lang === 'zh' ? '全部' : 'All'}</Button>
             {tags && tags.length > 0
               ? tags.map(tag => (
                   <Button key={tag.id} variant={selectedTagId === tag.id ? 'default' : 'outline'} size="sm" onClick={() => setSelectedTagId(tag.id)}>
@@ -424,7 +393,7 @@ export default function SharespearePage() {
                 ))
               : CATEGORY_DEFS.map(def => (
                   <Button key={def.tagId} variant={selectedTagId === def.tagId ? 'default' : 'outline'} size="sm" onClick={() => setSelectedTagId(def.tagId)}>
-                    {def.name}
+                    {lang === 'zh' ? def.name : def.name.split('（')[0]}
                   </Button>
                 ))
             }
@@ -433,7 +402,7 @@ export default function SharespearePage() {
           {/* 列表内容 */}
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">全部分享 ({filteredAndSortedShares.length})</h2>
+              <h2 className="text-xl font-semibold">{lang === 'zh' ? '全部分享' : 'All Shares'} ({filteredAndSortedShares.length})</h2>
             </div>
             {filteredAndSortedShares.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -445,14 +414,12 @@ export default function SharespearePage() {
               <Card className="p-12 text-center">
                 <div className="text-muted-foreground">
                   <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">暂无相关分享</p>
-                  <p>试试调整搜索或标签</p>
+                  <p className="text-lg mb-2">{lang === 'zh' ? '暂无相关分享' : 'No shares found'}</p>
+                  <p>{lang === 'zh' ? '试试调整搜索或标签' : 'Try adjusting search or tags'}</p>
                 </div>
               </Card>
             )}
           </section>
-
-          {/* 分类板块已移除 */}
         </div>
       )}
     </>

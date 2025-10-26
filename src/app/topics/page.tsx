@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { MessageCircle, Clock, User } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import TopicsHeader from '@/components/topics/TopicsHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,8 +31,9 @@ interface TopicsPageProps {
 
 export default async function TopicsPage({ searchParams }: TopicsPageProps) {
   const supabase = await createSupabaseServer()
-  const resolvedSearchParams = await searchParams
-  const page = parseInt(resolvedSearchParams.page || '1')
+  // 修复：searchParams 是对象，不需要 await
+  const pageParam = searchParams?.page
+  const page = parseInt(pageParam ?? '1')
   const limit = 10
   const offset = (page - 1) * limit
 
@@ -92,17 +94,7 @@ export default async function TopicsPage({ searchParams }: TopicsPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">留言板</h1>
-          <p className="text-gray-600 mt-2">分享想法，交流讨论</p>
-        </div>
-        <Link href="/admin/topics">
-          <Button variant="outline">
-            管理话题
-          </Button>
-        </Link>
-      </div>
+      <TopicsHeader />
 
       {topicsWithStats.length === 0 ? (
         <Card>
