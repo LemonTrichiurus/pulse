@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Filter, Plus, Eye, MessageCircle, Heart, Calendar, User, GraduationCap, Briefcase, Loader2 } from 'lucide-react'
+import { Search, Filter, Plus, Eye, MessageCircle, Heart, Calendar, User, GraduationCap, Briefcase, Loader2, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -119,7 +119,7 @@ interface FeaturedShare {
   author?: { id: string; display_name: string; avatar_url: string | null }
 }
 
-function ShareCard({ share, size = 'default', tagsMap }: { share: SharespeareItem | FeaturedShare, size?: 'default' | 'large', tagsMap?: Record<number, string> }) {
+function ShareCard({ share, size = 'default', tagsMap, isFeatured }: { share: SharespeareItem | FeaturedShare, size?: 'default' | 'large', tagsMap?: Record<number, string>, isFeatured?: boolean }) {
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [imgAspect, setImgAspect] = useState<number | null>(null)
@@ -156,6 +156,11 @@ function ShareCard({ share, size = 'default', tagsMap }: { share: SharespeareIte
               {share.published_at && (
                 <Badge variant="outline" className="text-green-600 border-green-600">
                   已发布
+                </Badge>
+              )}
+              {isFeatured && (
+                <Badge variant="outline" className="text-yellow-600 border-yellow-600 flex items-center gap-1">
+                  <Star className="w-3 h-3" /> 精选
                 </Badge>
               )}
             </div>
@@ -390,18 +395,7 @@ export default function SharespearePage() {
       {/* 主体内容 */}
       {!loading && !error && (
         <div className="w-full mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-8 max-w-[1400px]">
-          {/* 顶部精选（单篇） */}
-          {featuredShare && (
-            <section className="mb-12">
-              <div className="flex items-center gap-2 mb-6">
-                <GraduationCap className="w-6 h-6 text-yellow-600" />
-                <h2 className="text-2xl font-semibold">精选 Sharespeare</h2>
-              </div>
-              <div className="grid grid-cols-1">
-                <ShareCard share={featuredShare as SharespeareItem} size="large" tagsMap={tagsMap} />
-              </div>
-            </section>
-          )}
+          {/* 顶部精选（单篇）已移除，改为卡片内展示星标 */}
 
           {/* 搜索与排序 */}
           <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -444,7 +438,7 @@ export default function SharespearePage() {
             {filteredAndSortedShares.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredAndSortedShares.map((share) => (
-                  <ShareCard key={share.id} share={share} tagsMap={tagsMap} />
+                  <ShareCard key={share.id} share={share} tagsMap={tagsMap} isFeatured={featuredShare?.id === share.id} />
                 ))}
               </div>
             ) : (
